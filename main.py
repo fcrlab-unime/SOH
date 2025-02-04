@@ -12,5 +12,7 @@ from flwr_datasets import FederatedDataset
 
 dataset = DatasetLoader("dataset/Cell01_44SOH_25degC_10SOC_4406.xlsx", 2, 1)
 
-dataset.debug()
+trainloader, valloader, testloader = dataset.load_dataset()
+
+
 

@@ -29,7 +29,11 @@ class DatasetLoader():
 
         partition = dataset.shard(self.num_partitions, index=self.partition_id)
 
-        train, test = partition.train_test_split(test_size=0.2)
+        train_test = partition.train_test_split(test_size=0.2)
+
+        train = train_test["train"]
+
+        test = train_test["test"]
 
         train, val = train.train_test_split(test_size=0.2)
 
