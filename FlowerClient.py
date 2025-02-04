@@ -4,6 +4,8 @@ from flwr.client import Client, ClientApp, NumPyClient
 import numpy as np
 import torch
 import torch.nn as nn
+from torcheval.metrics import R2Score
+import torch.optim as optim
 
 from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple, Callable
@@ -20,48 +22,62 @@ def set_parameters(net, parameters: List[np.ndarray]):
 
 def train(net, trainloader, epochs: int):
     #Addestra la rete sul training set
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
+    criterion = nn.MSELoss()
+    r2_score_metric = R2Score().to(DEVICE)
+    optimizer = optim.Adam(net.parameters(), lr=0.0001)
     net.train()
     for epoch in range(epochs):
-        correct, total, epoch_loss = 0, 0, 0.0
+        total_loss, epoch_loss = 0.0
+        r2_total = 0.0
         for batch in trainloader:
-            images, labels = batch["img"], batch["label"]
-            images, labels = images.to(DEVICE), labels.to(DEVICE) #sposta il tensore images e labels sulla CPU
+            X_batch = batch[:, [0, 1, 2, 3]]
+            y_batch = batch[:, 4]
 
-            optimizer.zero_grad() #resetta il gradiente
-            outputs = net(images)
-            loss = criterion(net(images), labels)
+            optimizer.zero_grad()
+            y_pred = net(X_batch)
+            loss = criterion(y_pred, y_batch)
+
+            epoch_loss += loss.item()
             loss.backward()
             optimizer.step()
+            r2_total += r2_score_metric(y_pred, y_batch).item()
 
-            epoch_loss += loss
-            total += labels.size(0)
-            correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
     epoch_loss /= len(trainloader.dataset)
-    epoch_acc = correct / total
-    print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.4f}")
+    avg_loss = total_loss / len(trainloader)
+    avg_r2 = r2_total / len(trainloader)
+    print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Average R2: {avg_r2:.4f}")
 
 
 def test(net, testloader):
-    #Valutazione della rete sul test set
-    criterion = torch.nn.CrossEntropyLoss()
-    correct, total, loss = 0, 0, 0.0
+    # Imposta il modello in modalità valutazione
     net.eval()
-    with torch.no_grad():
+    
+    criterion = nn.MSELoss()
+    r2_score_metric = R2Score().to(DEVICE)
+    total_loss = 0.0
+    r2_total = 0.0
+    
+    with torch.no_grad():  # Disabilita il calcolo dei gradienti
         for batch in testloader:
-            images, labels = batch["img"], batch["label"]
-            images, labels = images.to(DEVICE), labels.to(DEVICE)
+            X_batch = batch[:, :-1].to(DEVICE)
+            y_batch = batch[:, -1].to(DEVICE)
 
-            outputs = net(images)
-            loss += criterion(outputs, labels).item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            # Forward pass
+            y_pred = net(X_batch)
 
+            # Calcola la perdita
+            loss = criterion(y_pred, y_batch)
+            total_loss += loss.item()
+            
+            # Aggiorna la metrica R²
+            r2_total += r2_score_metric(y_pred, y_batch).item()
+    
+    # Calcola la perdita media e R²
+    avg_loss = total_loss / len(testloader)
+    avg_r2 = r2_total / len(testloader)
     loss /= len(testloader.dataset)
-    accuracy = correct / total
-    return loss, accuracy
+    
+    return loss, avg_r2
 
 class FlowerClient(NumPyClient):
     def __init__(self, partition_id, net, trainloader, valloader):

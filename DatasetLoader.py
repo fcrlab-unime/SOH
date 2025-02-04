@@ -1,29 +1,45 @@
 import pandas as pd
 from torch.utils.data import DataLoader
 from datasets import Dataset
+import os
 
 class DatasetLoader():
 
-    def __init__(self, filename: str, num_partitions: int, partition_id: int):
-        self.filename = filename
+    def __init__(self, path: str, num_partitions: int, partition_id: int):
+        self.path = path
         self.num_partitions = num_partitions
         self.partition_id = partition_id
     
-    def get_soh(self):
-        return self.filename.split('_')[1].split("SOH")[0]
+    def get_soh(self, filename: str):
+        return filename.split('_')[1].split("SOH")[0]
     
-    def get_temperature(self):
-        return self.filename.split('_')[2].split("degC")[0]
+    def get_temperature(self, filename: str):
+        return filename.split('_')[2].split("degC")[0]
     
     def load_dataset(self):
 
-        df = pd.read_excel(self.filename)
+        dataset = pd.DataFrame()
+        for filename in os.listdir(self.path):
+            f = os.path.join(self.path, filename)
+            df = pd.read_excel(f)
 
-        df.columns = ["fre", "re", "im"]
+            values = df.values.flatten()
 
-        df["tem"] = self.get_temperature()
+            triplets = values.reshape(-1, 3)
+            formatted_triplets = [f"[{v1}, {v2}, {v3}]" for v1, v2, v3 in triplets]
 
-        df["soh"] = self.get_soh()
+
+            reshaped_df = pd.DataFrame(formatted_triplets)
+
+            tem = self.get_temperature(f)
+            soh = self.get_soh(f)
+            reshaped_df.loc[len(reshaped_df)] = tem
+            reshaped_df.loc[len(reshaped_df)] = soh
+
+            reshaped_df = reshaped_df.transpose()
+
+            dataset = pd.concat([dataset, reshaped_df], axis=0, ignore_index=True)
+  
 
         dataset = Dataset.from_pandas(df)
 
@@ -47,12 +63,23 @@ class DatasetLoader():
 
 
     def debug(self):
-        df = pd.read_excel(self.filename)
+        df = pd.read_excel("dataset/Cell05_45SOH_25degC_30SOC_4572.xlsx")
 
-        df.columns = ["fre", "re", "im"]
+        values = df.values.flatten()
 
-        df["tem"] = self.get_temperature()
+        triplets = values.reshape(-1, 3)
+        formatted_triplets = [f"[{v1}, {v2}, {v3}]" for v1, v2, v3 in triplets]
 
-        df["soh"] = self.get_soh()
+
+        reshaped_df = pd.DataFrame(formatted_triplets)
+
+        tem = self.get_temperature("dataset/Cell05_45SOH_25degC_30SOC_4572.xlsx")
+        soh = self.get_soh("dataset/Cell05_45SOH_25degC_30SOC_4572.xlsx")
+        reshaped_df.loc[len(reshaped_df)] = tem
+        reshaped_df.loc[len(reshaped_df)] = soh
+
+        reshaped_df = reshaped_df.transpose()
         
-        print(df.head())
+        
+        
+        print(reshaped_df)

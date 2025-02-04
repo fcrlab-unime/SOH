@@ -14,15 +14,36 @@ import torch
 
 DEVICE = torch.device('cpu')
 
-dataset = DatasetLoader("dataset/Cell01_44SOH_25degC_10SOC_4406.xlsx", 2, 1)
+NUM_PARTITIONS = 2
 
-trainloader, valloader, testloader = dataset.load_dataset()
+dataset = DatasetLoader("dataset/", 2, 1)
+
+
+trainloader, valloader, _ = dataset.load_dataset()
 
 
 def client_fn(context: Context) -> Client:
-    net = CCN1D.to(DEVICE)
+    input_channels = 1
+    hidden_channels = 16
+    num_layers = 3  
+    net = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+    net = net.to(DEVICE)
     partition_id = context.node_config["partition-id"]
-    num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader, _ = load_datasets(partition_id, num_partitions)
     return FlowerClient(partition_id, net, trainloader, valloader).to_client()
+
+def server_fn(context: Context) -> ServerAppComponents:
+    config = ServerConfig(num_rounds=10) #se non viene passata la strategi usa FedAvg
+
+    return ServerAppComponents(config=config)
+
+
+client = ClientApp(client_fn=client_fn)
+
+server = ServerApp(server_fn=server_fn)
+
+run_simulation(
+    server_app=server,
+    client_app=client,
+    num_supernodes=NUM_PARTITIONS,
+)
 
