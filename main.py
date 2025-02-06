@@ -23,12 +23,12 @@ def client_fn(context: Context) -> Client:
     input_channels = 1
     hidden_channels = 16
     num_layers = 3  
-    _network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
-    _network = _network.to(DEVICE)
+    network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+    network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     trainloader, valloader, _ = dataset.load_dataset(num_partitions, partition_id)
-    return FlowerClient(partition_id, _network, trainloader, valloader).to_client()
+    return FlowerClient(partition_id, network, trainloader, valloader).to_client()
 
 def server_fn(context: Context) -> ServerAppComponents:
     config = ServerConfig(num_rounds=10) #se non viene passata la strategi usa FedAvg
