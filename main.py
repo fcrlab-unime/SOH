@@ -16,20 +16,19 @@ DEVICE = torch.device('cpu')
 
 NUM_PARTITIONS = 2
 
-dataset = DatasetLoader("dataset/", 2, 1)
-
-
-trainloader, valloader, _ = dataset.load_dataset()
-
+dataset = DatasetLoader("dataset/")
+trainloader, valloader, _ = dataset.load_dataset2(2, 1)
 
 def client_fn(context: Context) -> Client:
     input_channels = 1
     hidden_channels = 16
     num_layers = 3  
-    net = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
-    net = net.to(DEVICE)
+    _network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+    _network = _network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
-    return FlowerClient(partition_id, net, trainloader, valloader).to_client()
+    num_partitions = context.node_config["num-partitions"]
+    trainloader, valloader, _ = dataset.load_dataset(num_partitions, partition_id)
+    return FlowerClient(partition_id, _network, trainloader, valloader).to_client()
 
 def server_fn(context: Context) -> ServerAppComponents:
     config = ServerConfig(num_rounds=10) #se non viene passata la strategi usa FedAvg
@@ -46,4 +45,3 @@ run_simulation(
     client_app=client,
     num_supernodes=NUM_PARTITIONS,
 )
-

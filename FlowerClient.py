@@ -29,18 +29,18 @@ def train(net, trainloader, epochs: int):
     for epoch in range(epochs):
         total_loss, epoch_loss = 0.0
         r2_total = 0.0
-        for batch in trainloader:
-            X_batch = batch[:, [0, 1, 2, 3]]
-            y_batch = batch[:, 4]
+        for inputs, labels in trainloader:
+            
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
             optimizer.zero_grad()
-            y_pred = net(X_batch)
-            loss = criterion(y_pred, y_batch)
+            y_pred = net(inputs)
+            loss = criterion(y_pred, labels)
 
             epoch_loss += loss.item()
             loss.backward()
             optimizer.step()
-            r2_total += r2_score_metric(y_pred, y_batch).item()
+            r2_total += r2_score_metric(y_pred, labels).item()
 
     epoch_loss /= len(trainloader.dataset)
     avg_loss = total_loss / len(trainloader)
@@ -58,19 +58,19 @@ def test(net, testloader):
     r2_total = 0.0
     
     with torch.no_grad():  # Disabilita il calcolo dei gradienti
-        for batch in testloader:
-            X_batch = batch[:, :-1].to(DEVICE)
-            y_batch = batch[:, -1].to(DEVICE)
+        for inputs, labels in testloader:
+            
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
             # Forward pass
-            y_pred = net(X_batch)
+            y_pred = net(inputs)
 
             # Calcola la perdita
-            loss = criterion(y_pred, y_batch)
+            loss = criterion(y_pred, labels)
             total_loss += loss.item()
             
             # Aggiorna la metrica R²
-            r2_total += r2_score_metric(y_pred, y_batch).item()
+            r2_total += r2_score_metric(y_pred, labels).item()
     
     # Calcola la perdita media e R²
     avg_loss = total_loss / len(testloader)
