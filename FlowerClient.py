@@ -26,21 +26,24 @@ def train(net, trainloader, epochs: int):
     r2_score_metric = R2Score().to(DEVICE)
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
     net.train()
+    r2_total = 0.0
     for epoch in range(epochs):
-        total_loss, epoch_loss = 0.0
-        r2_total = 0.0
+        total_loss, epoch_loss = 0.0, 0.0
         for inputs, labels in trainloader:
-            
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            inputs = inputs.unsqueeze(1)
 
             optimizer.zero_grad()
             y_pred = net(inputs)
+            print(y_pred)
             loss = criterion(y_pred, labels)
 
             epoch_loss += loss.item()
             loss.backward()
             optimizer.step()
-            r2_total += r2_score_metric(y_pred, labels).item()
+            r2_score_metric.update(y_pred, labels)
+            
+        r2_score_metric.compute()
 
     epoch_loss /= len(trainloader.dataset)
     avg_loss = total_loss / len(trainloader)
@@ -49,7 +52,6 @@ def train(net, trainloader, epochs: int):
 
 
 def test(net, testloader):
-    # Imposta il modello in modalità valutazione
     net.eval()
     
     criterion = nn.MSELoss()
@@ -57,22 +59,19 @@ def test(net, testloader):
     total_loss = 0.0
     r2_total = 0.0
     
-    with torch.no_grad():  # Disabilita il calcolo dei gradienti
+    with torch.no_grad():
         for inputs, labels in testloader:
-            
+            print(f"Input shape: {inputs.shape}, Label shape: {labels.shape}")
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            labels = labels.unsqueeze(1)
 
-            # Forward pass
             y_pred = net(inputs)
 
-            # Calcola la perdita
             loss = criterion(y_pred, labels)
             total_loss += loss.item()
             
-            # Aggiorna la metrica R²
             r2_total += r2_score_metric(y_pred, labels).item()
     
-    # Calcola la perdita media e R²
     avg_loss = total_loss / len(testloader)
     avg_r2 = r2_total / len(testloader)
     loss /= len(testloader.dataset)

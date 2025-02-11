@@ -13,30 +13,27 @@ class CustomDataset(data.Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
-        sample_values = self.dataframe.iloc[idx, :-1].values  # Tutte le colonne tranne l'ultima (etichetta)
-        label = self.dataframe.iloc[idx, -1]  # L'ultima colonna è l'etichetta
+        sample_values = self.dataframe.iloc[idx, :-1].values  
+        label = self.dataframe.iloc[idx, -1]
 
         processed_sample = []
-        for s in sample_values[:-1]:  # Prendi tutti tranne la penultima colonna
+        for s in sample_values[:-1]:
+            print(sample_values)
+            print(s)
             if isinstance(s, str):  
                 try:
-                    processed_sample.extend(map(float, ast.literal_eval(s)))  # Appiattisci la lista
+                    processed_sample.extend(map(float, ast.literal_eval(s)))
                 except (ValueError, SyntaxError) as e:
                     print(f"Errore nella conversione: {s} -> {e}")
-                    processed_sample.extend([0.0, 0.0, 0.0])  # Valore predefinito in caso di errore
+                    processed_sample.extend([0.0, 0.0, 0.0])
             elif isinstance(s, (int, float)):  
-                processed_sample.append(float(s))  # Se è un numero, aggiungilo direttamente
-            else:
-                print(f"Tipo sconosciuto: {s} ({type(s)})")
-                processed_sample.extend([0.0, 0.0, 0.0])
+                processed_sample.append(float(s))
 
-        # Aggiungi la penultima colonna (che è un valore singolo) al sample
         penultima_colonna = float(sample_values[-1])
         processed_sample.append(penultima_colonna)
 
-        # Converti in tensore PyTorch
         sample_tensor = torch.tensor(processed_sample, dtype=torch.float32)
-        label_tensor = torch.tensor(int(label), dtype=torch.long)
+        label_tensor = torch.tensor(float(label), dtype=torch.float32)
 
         return sample_tensor, label_tensor
 
@@ -79,26 +76,22 @@ class DatasetLoader():
         partition_size = len(dataset) // num_partitions
         remainder = len(dataset) % num_partitions
 
-        # Crea una lista delle dimensioni delle partizioni
         partition_sizes = [partition_size + 1 if i < remainder else partition_size for i in range(num_partitions)]
 
         partitions = random_split(dataset, partition_sizes)
         partition = partitions[partition_id]
 
-        # Suddividi il dataset in train e test (80-20)
         test_size = int(0.2 * len(partition))
         train_size = len(partition) - test_size
         train_dataset, test_dataset = random_split(partition, [train_size, test_size])
 
-        # Ulteriore suddivisione del train set in train e validation (80-20)
         val_size = int(0.2 * len(train_dataset))
         train_size = len(train_dataset) - val_size
         train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
-        # Crea i DataLoader
-        trainloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        valloader = DataLoader(val_dataset, batch_size=32, shuffle=True)
-        testloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=32,drop_last=True)
+        valloader = DataLoader(val_dataset, shuffle=True, batch_size=32,drop_last=True)
+        testloader = DataLoader(test_dataset, shuffle=False)
 
         return trainloader, valloader, testloader
 

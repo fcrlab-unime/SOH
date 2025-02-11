@@ -17,12 +17,16 @@ DEVICE = torch.device('cpu')
 NUM_PARTITIONS = 2
 
 dataset = DatasetLoader("dataset/")
-trainloader, valloader, _ = dataset.load_dataset2(2, 1)
+trainloader, valloader, _ = dataset.load_dataset(2, 1)
+
+print(f"Trainloader size: {len(trainloader)}")
+print(f"Valloader size: {len(valloader)}")
+
 
 def client_fn(context: Context) -> Client:
     input_channels = 1
-    hidden_channels = 16
-    num_layers = 3  
+    hidden_channels = 89
+    num_layers = 6
     network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
     network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
