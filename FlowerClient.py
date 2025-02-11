@@ -35,7 +35,6 @@ def train(net, trainloader, epochs: int):
 
             optimizer.zero_grad()
             y_pred = net(inputs)
-            print(y_pred)
             loss = criterion(y_pred, labels)
 
             epoch_loss += loss.item()

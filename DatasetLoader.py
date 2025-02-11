@@ -17,9 +17,7 @@ class CustomDataset(data.Dataset):
         label = self.dataframe.iloc[idx, -1]
 
         processed_sample = []
-        for s in sample_values[:-1]:
-            print(sample_values)
-            print(s)
+        for s in sample_values[:len(sample_values)-1]:
             if isinstance(s, str):  
                 try:
                     processed_sample.extend(map(float, ast.literal_eval(s)))
@@ -70,7 +68,7 @@ class DatasetLoader():
             reshaped_df = reshaped_df.transpose()
 
             dataset = pd.concat([dataset, reshaped_df], axis=0, ignore_index=True)
-        
+
         dataset = CustomDataset(dataset)
 
         partition_size = len(dataset) // num_partitions
