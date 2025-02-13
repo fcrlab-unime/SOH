@@ -14,6 +14,9 @@ class CustomDataset(data.Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
+        """
+        Separates the samples from the label
+        """
         sample_values = self.dataframe.iloc[idx, :-1].values.astype(np.float32)  
         label = self.dataframe.iloc[idx, -1]
 
@@ -44,17 +47,34 @@ class CustomDataset(data.Dataset):
 class DatasetLoader():
 
     def __init__(self, path: str, write_file: bool, read_file: bool):
+        """
+        Class to load the dataset
+
+        Args:
+            path (str): Path to the dataset folder.
+            write_file (bool): Whether to write the formatted dataset to a file.
+            read_file (bool): Whether to read the formatted dataset from a file.
+        """
         self.write_file = write_file
         self.read_file = read_file
         self.path = path
     
     def get_soh(self, filename: str):
+        """
+        Return the SOH
+        """
         return filename.split('_')[1].split("SOH")[0]
     
     def get_temperature(self, filename: str):
+        """
+        Return the temperature
+        """
         return filename.split('_')[2].split("degC")[0]
     
     def format_dataset(self) -> pd.DataFrame:
+        """
+        Formats the dataset where each row is a single measurement
+        """
         dataset = pd.DataFrame()
         for filename in os.listdir(self.path):
             f = os.path.join(self.path, filename)
@@ -90,7 +110,12 @@ class DatasetLoader():
                 dataset.to_excel(filename+".xlsx", index=False)
     
     def load_dataset(self, num_partitions: int, partition_id: int):
-        
+        """
+        Load the dataset from file and partition it
+
+        Returns:
+            DataLoader instances
+        """
         if not self.read_file:
             dataset = CustomDataset(self.format_dataset())
         else:
@@ -120,29 +145,5 @@ class DatasetLoader():
 
         return trainloader, valloader, testloader
 
-
-    def debug(self):
-        df = pd.read_excel("dataset/Cell05_45SOH_25degC_30SOC_4572.xlsx")
-
-        values = df.values.flatten()
-
-        triplets = values.reshape(-1, 3)
-        formatted_triplets = [f"[{v1}, {v2}, {v3}]" for v1, v2, v3 in triplets]
-
-
-        reshaped_df = pd.DataFrame(formatted_triplets)
-
-        tem = self.get_temperature("dataset/Cell05_45SOH_25degC_30SOC_4572.xlsx")
-        soh = self.get_soh("dataset/Cell05_45SOH_25degC_30SOC_4572.xlsx")
-        reshaped_df.loc[len(reshaped_df)] = tem
-        reshaped_df.loc[len(reshaped_df)] = soh
-
-        reshaped_df = reshaped_df.transpose()
-        
-        dataset = CustomDataset(reshaped_df)
-        sample, label = dataset[0]
-        print("Sample shape:", sample.shape)
-        print("Sample:", sample)
-        print("Label:", label)
 
         

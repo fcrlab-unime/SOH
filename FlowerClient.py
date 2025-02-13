@@ -14,6 +14,9 @@ from typing import Dict, List, Optional, Tuple, Callable
 DEVICE = torch.device('cpu')
 
 def get_parameters(net) -> List[np.ndarray]:
+    """
+    Function to get the parameters of the network
+    """
     return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
 """def set_parameters(net, parameters: List[np.ndarray]):
@@ -22,6 +25,9 @@ def get_parameters(net) -> List[np.ndarray]:
     net.load_state_dict(state_dict, strict=False)"""
 
 def set_parameters(net, parameters):
+    """
+    Function to set the parameters of the network
+    """
     state_dict = {k: torch.tensor(v) for k, v in zip(net.state_dict().keys(), parameters)}
     net.load_state_dict(state_dict, strict=False) 
 
