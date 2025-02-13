@@ -4,6 +4,7 @@ import torch.utils.data as data
 import torch
 import os
 import ast
+import numpy as np
 
 class CustomDataset(data.Dataset):
     def __init__(self, dataframe):
@@ -13,26 +14,29 @@ class CustomDataset(data.Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
-        sample_values = self.dataframe.iloc[idx, :-1].values  
+        sample_values = self.dataframe.iloc[idx, :-1].values.astype(np.float32)  
         label = self.dataframe.iloc[idx, -1]
 
-        processed_sample = []
-        print(f"Sample values: {sample_values}")
-        for s in sample_values[:len(sample_values)-1]:
-            print(f"s: {s}")
-            if isinstance(s, str):  
+        """processed_sample = []
+        for s in sample_values[:-1]:
+            if isinstance(s, str):
                 try:
-                    processed_sample.extend(map(float, ast.literal_eval(s)))
+                    processed_sample.append(np.array(ast.literal_eval(s), dtype=np.float32))  
                 except (ValueError, SyntaxError) as e:
                     print(f"Errore nella conversione: {s} -> {e}")
-                    processed_sample.extend([0.0, 0.0, 0.0])
-            elif isinstance(s, (int, float)):  
-                processed_sample.append(float(s))
+                    processed_sample.append(np.array([0.0, 0.0, 0.0], dtype=np.float32))  
+            elif isinstance(s, (int, float)):
+                processed_sample.append(np.array([float(s)], dtype=np.float32))  
+                
+        processed_sample = np.stack(processed_sample)
 
         penultima_colonna = float(sample_values[-1])
-        processed_sample.append(penultima_colonna)
+        extra_column = np.full((processed_sample.shape[0], 1), penultima_colonna, dtype=np.float32)
 
-        sample_tensor = torch.tensor(processed_sample, dtype=torch.float32)
+        processed_sample = np.concatenate((processed_sample, extra_column), axis=1)"""
+
+
+        sample_tensor = torch.from_numpy(sample_values)
         label_tensor = torch.tensor(float(label), dtype=torch.float32)
 
         return sample_tensor, label_tensor
@@ -58,20 +62,20 @@ class DatasetLoader():
 
             values = df.values.flatten()
 
-            triplets = values.reshape(-1, 3)
-            formatted_triplets = [f"[{v1}, {v2}, {v3}]" for v1, v2, v3 in triplets]
+            """triplets = values.reshape(-1, 3)
+            formatted_triplets = [f"[{v1}, {v2}, {v3}]" for v1, v2, v3 in triplets]"""
 
-
-            reshaped_df = pd.DataFrame(formatted_triplets)
+            df = pd.DataFrame(values)
+            #reshaped_df = pd.DataFrame(formatted_triplets)
 
             tem = self.get_temperature(f)
             soh = self.get_soh(f)
-            reshaped_df.loc[len(reshaped_df)] = tem
-            reshaped_df.loc[len(reshaped_df)] = soh
+            df.loc[len(df)] = tem
+            df.loc[len(df)] = soh
 
-            reshaped_df = reshaped_df.transpose()
+            df = df.transpose()
 
-            dataset = pd.concat([dataset, reshaped_df], axis=0, ignore_index=True)
+            dataset = pd.concat([dataset, df], axis=0, ignore_index=True)
 
         if self.write_file:
             self.write_dataset(dataset)
@@ -80,7 +84,7 @@ class DatasetLoader():
     def write_dataset(self, dataset=None):
         if self.write_file and not self.read_file:
             filename = str(input("Input the filename for the dataset:\n"))
-            if dataset == None:
+            if dataset is None:
                 self.format_dataset().to_excel(filename+".xlsx", index=False)
             else:
                 dataset.to_excel(filename+".xlsx", index=False)

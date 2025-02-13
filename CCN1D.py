@@ -50,6 +50,6 @@ class CCN1D(nn.Module):
             x = self.dropout(x)
 
         x = self.output_layer(x)
-        x = x.mean(dim=-1)
+        #x = x.mean(dim=-1)
         x = x.squeeze()
         return x

@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from torcheval.metrics import R2Score
 import torch.optim as optim
+from sklearn.metrics import r2_score
 
 from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple, Callable
@@ -27,7 +28,7 @@ def set_parameters(net, parameters):
 def train(net, trainloader, epochs: int):
     #Addestra la rete sul training set
     criterion = nn.MSELoss()
-    r2_score_metric = R2Score().to(DEVICE)
+    #r2_score_metric = R2Score().to(DEVICE)
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
     net.train()
     r2_total = 0.0
@@ -35,6 +36,8 @@ def train(net, trainloader, epochs: int):
         total_loss, epoch_loss = 0.0, 0.0
         for inputs, labels in trainloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            print(f"Inputs shape: {inputs.shape}")
+            #inputs = inputs.permute(0, 2, 1)
             inputs = inputs.unsqueeze(1)
 
             optimizer.zero_grad()
@@ -42,16 +45,15 @@ def train(net, trainloader, epochs: int):
             loss = criterion(y_pred, labels)
 
             epoch_loss += loss.item()
+            total_loss += epoch_loss
             loss.backward()
             optimizer.step()
-            r2_score_metric.update(y_pred, labels)
-            
-        r2_score_metric.compute()
+            r2_total += r2_score(y_pred.detach().cpu().numpy(), labels.cpu().numpy())
 
     epoch_loss /= len(trainloader.dataset)
     avg_loss = total_loss / len(trainloader)
     avg_r2 = r2_total / len(trainloader)
-    print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Average R2: {avg_r2:.4f}")
+    print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
 
 
 def test(net, testloader):
