@@ -17,7 +17,9 @@ class CustomDataset(data.Dataset):
         label = self.dataframe.iloc[idx, -1]
 
         processed_sample = []
+        print(f"Sample values: {sample_values}")
         for s in sample_values[:len(sample_values)-1]:
+            print(f"s: {s}")
             if isinstance(s, str):  
                 try:
                     processed_sample.extend(map(float, ast.literal_eval(s)))
@@ -37,7 +39,9 @@ class CustomDataset(data.Dataset):
 
 class DatasetLoader():
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, write_file: bool, read_file: bool):
+        self.write_file = write_file
+        self.read_file = read_file
         self.path = path
     
     def get_soh(self, filename: str):
@@ -46,7 +50,7 @@ class DatasetLoader():
     def get_temperature(self, filename: str):
         return filename.split('_')[2].split("degC")[0]
     
-    def load_dataset(self, num_partitions: int, partition_id: int):
+    def format_dataset(self) -> pd.DataFrame:
         dataset = pd.DataFrame()
         for filename in os.listdir(self.path):
             f = os.path.join(self.path, filename)
@@ -69,7 +73,26 @@ class DatasetLoader():
 
             dataset = pd.concat([dataset, reshaped_df], axis=0, ignore_index=True)
 
-        dataset = CustomDataset(dataset)
+        if self.write_file:
+            self.write_dataset(dataset)
+        return dataset
+    
+    def write_dataset(self, dataset=None):
+        if self.write_file and not self.read_file:
+            filename = str(input("Input the filename for the dataset:\n"))
+            if dataset == None:
+                self.format_dataset().to_excel(filename+".xlsx", index=False)
+            else:
+                dataset.to_excel(filename+".xlsx", index=False)
+    
+    def load_dataset(self, num_partitions: int, partition_id: int):
+        
+        if not self.read_file:
+            dataset = CustomDataset(self.format_dataset())
+        else:
+            filename = str(input("Input the filename of the dataset to read from .xlsx:\n"))
+            dataset = pd.read_excel(filename+".xlsx")
+            dataset = CustomDataset(dataset)
 
         partition_size = len(dataset) // num_partitions
         remainder = len(dataset) % num_partitions

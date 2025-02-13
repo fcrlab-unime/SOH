@@ -15,10 +15,14 @@ DEVICE = torch.device('cpu')
 def get_parameters(net) -> List[np.ndarray]:
     return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
-def set_parameters(net, parameters: List[np.ndarray]):
+"""def set_parameters(net, parameters: List[np.ndarray]):
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
-    net.load_state_dict(state_dict, strict=True)
+    net.load_state_dict(state_dict, strict=False)"""
+
+def set_parameters(net, parameters):
+    state_dict = {k: torch.tensor(v) for k, v in zip(net.state_dict().keys(), parameters)}
+    net.load_state_dict(state_dict, strict=False) 
 
 def train(net, trainloader, epochs: int):
     #Addestra la rete sul training set
@@ -57,25 +61,27 @@ def test(net, testloader):
     r2_score_metric = R2Score().to(DEVICE)
     total_loss = 0.0
     r2_total = 0.0
+    total, correct = 0, 0
     
     with torch.no_grad():
         for inputs, labels in testloader:
             print(f"Input shape: {inputs.shape}, Label shape: {labels.shape}")
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
-            labels = labels.unsqueeze(1)
+            inputs = inputs.unsqueeze(1)
 
             y_pred = net(inputs)
 
             loss = criterion(y_pred, labels)
             total_loss += loss.item()
-            
-            r2_total += r2_score_metric(y_pred, labels).item()
+            total += labels.size(0)
+            correct += (y_pred == labels).sum().item()
     
     avg_loss = total_loss / len(testloader)
     avg_r2 = r2_total / len(testloader)
     loss /= len(testloader.dataset)
+    accuracy = correct / total
     
-    return loss, avg_r2
+    return loss, accuracy
 
 class FlowerClient(NumPyClient):
     def __init__(self, partition_id, net, trainloader, valloader):

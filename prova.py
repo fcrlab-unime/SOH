@@ -17,12 +17,13 @@ import torch
 DEVICE = torch.device('cpu')
 
 
-dataset = DatasetLoader("dataset/")
+dataset = DatasetLoader("dataset/", write_file=False, read_file=True)
 trainloader, valloader, _ = dataset.load_dataset(2, 1)
 
+"""
 input_channels = 1
 hidden_channels = 89
 num_layers = 6  
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
 
-train(network, trainloader, 5)
+train(network, trainloader, 5)"""
