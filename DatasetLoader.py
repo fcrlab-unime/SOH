@@ -20,25 +20,6 @@ class CustomDataset(data.Dataset):
         sample_values = self.dataframe.iloc[idx, :-1].values.astype(np.float32)  
         label = self.dataframe.iloc[idx, -1]
 
-        """processed_sample = []
-        for s in sample_values[:-1]:
-            if isinstance(s, str):
-                try:
-                    processed_sample.append(np.array(ast.literal_eval(s), dtype=np.float32))  
-                except (ValueError, SyntaxError) as e:
-                    print(f"Errore nella conversione: {s} -> {e}")
-                    processed_sample.append(np.array([0.0, 0.0, 0.0], dtype=np.float32))  
-            elif isinstance(s, (int, float)):
-                processed_sample.append(np.array([float(s)], dtype=np.float32))  
-                
-        processed_sample = np.stack(processed_sample)
-
-        penultima_colonna = float(sample_values[-1])
-        extra_column = np.full((processed_sample.shape[0], 1), penultima_colonna, dtype=np.float32)
-
-        processed_sample = np.concatenate((processed_sample, extra_column), axis=1)"""
-
-
         sample_tensor = torch.from_numpy(sample_values)
         label_tensor = torch.tensor(float(label), dtype=torch.float32)
 
@@ -46,7 +27,7 @@ class CustomDataset(data.Dataset):
 
 class DatasetLoader():
 
-    def __init__(self, path: str, write_file: bool, read_file: bool):
+    def __init__(self, path: str, write_file: bool, read_file: bool, dataset_filename: str = None):
         """
         Class to load the dataset
 
@@ -54,10 +35,12 @@ class DatasetLoader():
             path (str): Path to the dataset folder.
             write_file (bool): Whether to write the formatted dataset to a file.
             read_file (bool): Whether to read the formatted dataset from a file.
+            dataset_filename (str): Name of the dataset file to read or write. Defaults to None.
         """
         self.write_file = write_file
         self.read_file = read_file
         self.path = path
+        self.datase_filename = dataset_filename
     
     def get_soh(self, filename: str):
         """
@@ -73,41 +56,58 @@ class DatasetLoader():
     
     def format_dataset(self) -> pd.DataFrame:
         """
-        Formats the dataset where each row is a single measurement
+        Formats the dataset where each row is a single measurement.
         """
         dataset = pd.DataFrame()
+        
         for filename in os.listdir(self.path):
             f = os.path.join(self.path, filename)
             df = pd.read_excel(f)
 
+            if df.isna().sum().sum() > 0:
+                print(f"Warning: Ignoring file {filename} due to NaN values in the original file.")
+                continue
+
             values = df.values.flatten()
 
-            """triplets = values.reshape(-1, 3)
-            formatted_triplets = [f"[{v1}, {v2}, {v3}]" for v1, v2, v3 in triplets]"""
-
             df = pd.DataFrame(values)
-            #reshaped_df = pd.DataFrame(formatted_triplets)
+
+            if df.isna().sum().sum() > 0:
+                print(f"Warning: Ignoring file {filename} due to NaN values after flattening.")
+                continue
 
             tem = self.get_temperature(f)
             soh = self.get_soh(f)
+
+            if pd.isna(tem) or pd.isna(soh):
+                print(f"Warning: Ignoring file {filename} due to NaN in temperature or SOH.")
+                continue
+
             df.loc[len(df)] = tem
             df.loc[len(df)] = soh
 
             df = df.transpose()
 
+            if df.isna().sum().sum() > 0:
+                print(f"Warning: Ignoring file {filename} due to NaN values before concatenation.")
+                continue
+
+
             dataset = pd.concat([dataset, df], axis=0, ignore_index=True)
+
+        dataset = dataset.dropna(axis=0, how="any").reset_index(drop=True)
 
         if self.write_file:
             self.write_dataset(dataset)
+    
         return dataset
     
     def write_dataset(self, dataset=None):
-        if self.write_file and not self.read_file:
-            filename = str(input("Input the filename for the dataset:\n"))
+        if self.write_file and not self.read_file and self.datase_filename is not None:
             if dataset is None:
-                self.format_dataset().to_excel(filename+".xlsx", index=False)
+                self.format_dataset().to_excel(self.datase_filename, index=False)
             else:
-                dataset.to_excel(filename+".xlsx", index=False)
+                dataset.to_excel(self.datase_filename, index=False)
     
     def load_dataset(self, num_partitions: int, partition_id: int):
         """
@@ -119,8 +119,8 @@ class DatasetLoader():
         if not self.read_file:
             dataset = CustomDataset(self.format_dataset())
         else:
-            filename = str(input("Input the filename of the dataset to read from .xlsx:\n"))
-            dataset = pd.read_excel(filename+".xlsx")
+            dataset = pd.read_excel(self.datase_filename)
+            dataset = dataset.dropna(axis=0, how="any").reset_index(drop=True)
             dataset = CustomDataset(dataset)
 
         partition_size = len(dataset) // num_partitions

@@ -34,62 +34,65 @@ def set_parameters(net, parameters):
 def train(net, trainloader, epochs: int):
     #Addestra la rete sul training set
     criterion = nn.MSELoss()
-    #r2_score_metric = R2Score().to(DEVICE)
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    optimizer = optim.Adam(net.parameters(), lr=0.001)
     net.train()
     r2_total = 0.0
     for epoch in range(epochs):
-        total_loss, epoch_loss = 0.0, 0.0
+        total_loss = 0.0
+        r2_total = 0.0
+        num_batches = 0
         for inputs, labels in trainloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
-            print(f"Inputs shape: {inputs.shape}")
-            #inputs = inputs.permute(0, 2, 1)
-            inputs = inputs.unsqueeze(1)
+            inputs = inputs.unsqueeze(2)
+
+            if torch.isnan(inputs).any():
+                print("Warning: NaN detected in input!")
+                continue
 
             optimizer.zero_grad()
             y_pred = net(inputs)
             loss = criterion(y_pred, labels)
 
-            epoch_loss += loss.item()
-            total_loss += epoch_loss
+            total_loss += loss.item()
             loss.backward()
             optimizer.step()
-            r2_total += r2_score(y_pred.detach().cpu().numpy(), labels.cpu().numpy())
+            r2_total += r2_score(labels.cpu().numpy(), y_pred.detach().cpu().numpy())
+            num_batches += 1
 
-    epoch_loss /= len(trainloader.dataset)
-    avg_loss = total_loss / len(trainloader)
-    avg_r2 = r2_total / len(trainloader)
-    print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
+        avg_loss = total_loss / num_batches
+        avg_r2 = r2_total / num_batches
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
 
 
 def test(net, testloader):
     net.eval()
     
     criterion = nn.MSELoss()
-    r2_score_metric = R2Score().to(DEVICE)
     total_loss = 0.0
     r2_total = 0.0
     total, correct = 0, 0
     
     with torch.no_grad():
         for inputs, labels in testloader:
-            print(f"Input shape: {inputs.shape}, Label shape: {labels.shape}")
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
-            inputs = inputs.unsqueeze(1)
+            inputs = inputs.unsqueeze(2)
+
+            if torch.isnan(inputs).any():
+                print("Warning: NaN detected in input!")
+                continue
 
             y_pred = net(inputs)
 
             loss = criterion(y_pred, labels)
             total_loss += loss.item()
-            total += labels.size(0)
-            correct += (y_pred == labels).sum().item()
+            r2_total += r2_score(y_pred.cpu().numpy(), labels.cpu().numpy())
     
     avg_loss = total_loss / len(testloader)
     avg_r2 = r2_total / len(testloader)
-    loss /= len(testloader.dataset)
-    accuracy = correct / total
+    #loss /= len(testloader.dataset)
+    #accuracy = correct / total
     
-    return loss, accuracy
+    return avg_loss, avg_r2
 
 class FlowerClient(NumPyClient):
     def __init__(self, partition_id, net, trainloader, valloader):

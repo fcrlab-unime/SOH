@@ -16,16 +16,12 @@ DEVICE = torch.device('cpu')
 
 NUM_PARTITIONS = 2
 
-dataset = DatasetLoader("dataset/")
-trainloader, valloader, _ = dataset.load_dataset(2, 1)
-
-print(f"Trainloader size: {len(trainloader)}")
-print(f"Valloader size: {len(valloader)}")
+dataset = DatasetLoader("dataset/", write_file=False, read_file=True, dataset_filename="prova3.xlsx")
 
 
 def client_fn(context: Context) -> Client:
-    input_channels = 1
-    hidden_channels = 89
+    input_channels = 178
+    hidden_channels = 64
     num_layers = 6
     network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
     network = network.to(DEVICE)

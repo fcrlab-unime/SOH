@@ -17,13 +17,13 @@ import torch
 DEVICE = torch.device('cpu')
 
 
-dataset = DatasetLoader("dataset/", write_file=False, read_file=True)
+dataset = DatasetLoader("dataset/", write_file=True, read_file=False, dataset_filename="prova3.xlsx")
 trainloader, valloader, _ = dataset.load_dataset(2, 1)
 
 
-input_channels = 1
+input_channels = 178
 hidden_channels = 32
-num_layers = 6  
+num_layers = 3  
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
 
-train(network, trainloader, 5)
+train(network, trainloader, 50)
