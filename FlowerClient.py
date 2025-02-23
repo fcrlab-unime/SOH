@@ -34,13 +34,12 @@ def set_parameters(net, parameters):
 def train(net, trainloader, epochs: int):
     #Addestra la rete sul training set
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4)
     net.train()
     r2_total = 0.0
     for epoch in range(epochs):
         total_loss = 0.0
         r2_total = 0.0
-        num_batches = 0
         for inputs, labels in trainloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             inputs = inputs.unsqueeze(2)
@@ -57,10 +56,9 @@ def train(net, trainloader, epochs: int):
             loss.backward()
             optimizer.step()
             r2_total += r2_score(labels.cpu().numpy(), y_pred.detach().cpu().numpy())
-            num_batches += 1
 
-        avg_loss = total_loss / num_batches
-        avg_r2 = r2_total / num_batches
+        avg_loss = total_loss / len(trainloader.dataset)
+        avg_r2 = r2_total / len(trainloader.dataset)
         print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
 
 
@@ -85,10 +83,10 @@ def test(net, testloader):
 
             loss = criterion(y_pred, labels)
             total_loss += loss.item()
-            r2_total += r2_score(y_pred.cpu().numpy(), labels.cpu().numpy())
+            r2_total += r2_score(labels.cpu().numpy(), y_pred.detach().cpu().numpy())
     
-    avg_loss = total_loss / len(testloader)
-    avg_r2 = r2_total / len(testloader)
+    avg_loss = total_loss / len(testloader.dataset)
+    avg_r2 = r2_total / len(testloader.dataset)
     #loss /= len(testloader.dataset)
     #accuracy = correct / total
     
@@ -114,5 +112,5 @@ class FlowerClient(NumPyClient):
     def evaluate(self, parameters, config):
         print(f"[Client {self.partition_id}] evaluate, config: {config}")
         set_parameters(self.net, parameters)
-        loss, accuracy = test(self.net, self.valloader)
-        return float(loss), len(self.valloader), {"accuracy": float(accuracy)}
+        loss, mean_r2 = test(self.net, self.valloader)
+        return float(loss), len(self.valloader), {"mean_r2": float(mean_r2)}

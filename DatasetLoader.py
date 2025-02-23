@@ -6,24 +6,32 @@ import os
 import ast
 import numpy as np
 
+
 class CustomDataset(data.Dataset):
     def __init__(self, dataframe):
         self.dataframe = dataframe
+        
+        self.dataframe.iloc[:, :-1] = self.dataframe.iloc[:, :-1].apply(pd.to_numeric, errors='coerce').fillna(0)
+
+        self.mean = self.dataframe.iloc[:, :-1].mean()
+        self.std = self.dataframe.iloc[:, :-1].std()
+
+        self.std.replace(0, 1, inplace=True)
 
     def __len__(self):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
-        """
-        Separates the samples from the label
-        """
-        sample_values = self.dataframe.iloc[idx, :-1].values.astype(np.float32)  
         label = self.dataframe.iloc[idx, -1]
+
+        sample_values = ((self.dataframe.iloc[idx, :-1] - self.mean) / self.std).values.astype(np.float32)
 
         sample_tensor = torch.from_numpy(sample_values)
         label_tensor = torch.tensor(float(label), dtype=torch.float32)
 
         return sample_tensor, label_tensor
+
+
 
 class DatasetLoader():
 
@@ -105,9 +113,10 @@ class DatasetLoader():
     def write_dataset(self, dataset=None):
         if self.write_file and not self.read_file and self.datase_filename is not None:
             if dataset is None:
-                self.format_dataset().to_excel(self.datase_filename, index=False)
-            else:
-                dataset.to_excel(self.datase_filename, index=False)
+                dataset = self.format_dataset()
+
+        with open(self.datase_filename, mode='w', newline='') as f:
+            dataset.to_csv(f, index=False)
     
     def load_dataset(self, num_partitions: int, partition_id: int):
         """
@@ -119,8 +128,9 @@ class DatasetLoader():
         if not self.read_file:
             dataset = CustomDataset(self.format_dataset())
         else:
-            dataset = pd.read_excel(self.datase_filename)
+            dataset = pd.read_csv(self.datase_filename)
             dataset = dataset.dropna(axis=0, how="any").reset_index(drop=True)
+            print(len(dataset))
             dataset = CustomDataset(dataset)
 
         partition_size = len(dataset) // num_partitions
@@ -139,8 +149,8 @@ class DatasetLoader():
         train_size = len(train_dataset) - val_size
         train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
-        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=32,drop_last=True)
-        valloader = DataLoader(val_dataset, shuffle=True, batch_size=32,drop_last=True)
+        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=128,drop_last=True)
+        valloader = DataLoader(val_dataset, shuffle=True, batch_size=128,drop_last=True)
         testloader = DataLoader(test_dataset, shuffle=False)
 
         return trainloader, valloader, testloader
