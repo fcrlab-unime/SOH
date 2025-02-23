@@ -130,7 +130,6 @@ class DatasetLoader():
         else:
             dataset = pd.read_csv(self.datase_filename)
             dataset = dataset.dropna(axis=0, how="any").reset_index(drop=True)
-            print(len(dataset))
             dataset = CustomDataset(dataset)
 
         partition_size = len(dataset) // num_partitions

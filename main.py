@@ -23,7 +23,7 @@ dataset = DatasetLoader("dataset/", write_file=False, read_file=True, dataset_fi
 def client_fn(context: Context) -> Client:
     input_channels = 178
     hidden_channels = 256
-    num_layers = 3
+    num_layers = 5
     network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers, dropout=0.3)
     network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
@@ -50,7 +50,7 @@ def aggregate_metrics(results: List[Tuple[int, Dict[str, float]]]) -> Dict[str, 
     return {"r2_score": r2_scores}
 
 def server_fn(context: Context) -> ServerAppComponents:
-    config = ServerConfig(num_rounds=20) #se non viene passata la strategi usa FedAvg
+    config = ServerConfig(num_rounds=30) #se non viene passata la strategi usa FedAvg
 
     strategy = FedAvg(
         evaluate_metrics_aggregation_fn=aggregate_metrics,

@@ -32,14 +32,16 @@ def set_parameters(net, parameters):
     net.load_state_dict(state_dict, strict=False) 
 
 def train(net, trainloader, epochs: int):
-    #Addestra la rete sul training set
     criterion = nn.MSELoss()
     optimizer = optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4)
     net.train()
-    r2_total = 0.0
+    
     for epoch in range(epochs):
         total_loss = 0.0
-        r2_total = 0.0
+        all_labels = []
+        all_preds = []
+        total_samples = 0
+        
         for inputs, labels in trainloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             inputs = inputs.unsqueeze(2)
@@ -51,14 +53,21 @@ def train(net, trainloader, epochs: int):
             optimizer.zero_grad()
             y_pred = net(inputs)
             loss = criterion(y_pred, labels)
+            
+            total_loss += loss.item() * inputs.size(0)
+            total_samples += inputs.size(0)
 
-            total_loss += loss.item()
             loss.backward()
             optimizer.step()
-            r2_total += r2_score(labels.cpu().numpy(), y_pred.detach().cpu().numpy())
 
-        avg_loss = total_loss / len(trainloader.dataset)
-        avg_r2 = r2_total / len(trainloader.dataset)
+            all_labels.append(labels.cpu().numpy())
+            all_preds.append(y_pred.detach().cpu().numpy())
+
+        avg_loss = total_loss / total_samples
+        all_labels = np.concatenate(all_labels)
+        all_preds = np.concatenate(all_preds)
+        avg_r2 = r2_score(all_labels, all_preds)
+
         print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
 
 
@@ -67,8 +76,9 @@ def test(net, testloader):
     
     criterion = nn.MSELoss()
     total_loss = 0.0
-    r2_total = 0.0
-    total, correct = 0, 0
+    all_labels = []
+    all_preds = []
+    total_samples = 0
     
     with torch.no_grad():
         for inputs, labels in testloader:
@@ -82,13 +92,16 @@ def test(net, testloader):
             y_pred = net(inputs)
 
             loss = criterion(y_pred, labels)
-            total_loss += loss.item()
-            r2_total += r2_score(labels.cpu().numpy(), y_pred.detach().cpu().numpy())
-    
-    avg_loss = total_loss / len(testloader.dataset)
-    avg_r2 = r2_total / len(testloader.dataset)
-    #loss /= len(testloader.dataset)
-    #accuracy = correct / total
+            total_loss += loss.item() * inputs.size(0)
+            total_samples += inputs.size(0)
+
+            all_labels.append(labels.cpu().numpy())
+            all_preds.append(y_pred.cpu().numpy())
+
+    avg_loss = total_loss / total_samples
+    all_labels = np.concatenate(all_labels)
+    all_preds = np.concatenate(all_preds)
+    avg_r2 = r2_score(all_labels, all_preds)
     
     return avg_loss, avg_r2
 
