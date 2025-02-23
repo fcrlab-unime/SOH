@@ -148,8 +148,8 @@ class DatasetLoader():
         train_size = len(train_dataset) - val_size
         train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
-        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=128,drop_last=True)
-        valloader = DataLoader(val_dataset, shuffle=True, batch_size=128,drop_last=True)
+        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=64,drop_last=True)
+        valloader = DataLoader(val_dataset, shuffle=True, batch_size=64,drop_last=True)
         testloader = DataLoader(test_dataset, shuffle=False)
 
         return trainloader, valloader, testloader

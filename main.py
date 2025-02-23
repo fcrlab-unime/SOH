@@ -24,7 +24,7 @@ def client_fn(context: Context) -> Client:
     input_channels = 178
     hidden_channels = 256
     num_layers = 5
-    network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers, dropout=0.3)
+    network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
     network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
@@ -37,7 +37,7 @@ def get_on_fit_config_fn() -> Callable[[int], Dict[str, str]]:
     def fit_config(server_round: int) -> Dict[str, str]:
         config = {
             "learning_rate": str(0.001),
-            "batch_size": str(128),
+            "batch_size": str(64),
         }
 
         return config
@@ -50,7 +50,7 @@ def aggregate_metrics(results: List[Tuple[int, Dict[str, float]]]) -> Dict[str, 
     return {"r2_score": r2_scores}
 
 def server_fn(context: Context) -> ServerAppComponents:
-    config = ServerConfig(num_rounds=30) #se non viene passata la strategi usa FedAvg
+    config = ServerConfig(num_rounds=15) #se non viene passata la strategi usa FedAvg
 
     strategy = FedAvg(
         evaluate_metrics_aggregation_fn=aggregate_metrics,
