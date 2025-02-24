@@ -28,7 +28,7 @@ def client_fn(context: Context) -> Client:
     network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader, _ = dataset.load_dataset(num_partitions, partition_id)
+    trainloader, valloader, testloader = dataset.load_dataset(num_partitions, partition_id)
     return FlowerClient(partition_id, network, trainloader, valloader).to_client()
 
 def get_on_fit_config_fn() -> Callable[[int], Dict[str, str]]:

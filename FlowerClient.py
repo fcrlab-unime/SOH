@@ -32,7 +32,7 @@ def set_parameters(net, parameters):
     net.load_state_dict(state_dict, strict=False) 
 
 def train(net, trainloader, epochs: int):
-    criterion = nn.MSELoss()
+    criterion = nn.MSELoss(reduction="mean")
     optimizer = optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4)
     net.train()
     
@@ -54,7 +54,8 @@ def train(net, trainloader, epochs: int):
             y_pred = net(inputs)
             loss = criterion(y_pred, labels)
             
-            total_loss += loss.item() * inputs.size(0)
+            #total_loss += loss.item() * inputs.size(0)
+            total_loss += loss.item()
             total_samples += inputs.size(0)
 
             loss.backward()
@@ -74,7 +75,7 @@ def train(net, trainloader, epochs: int):
 def test(net, testloader):
     net.eval()
     
-    criterion = nn.MSELoss()
+    criterion = nn.MSELoss(reduction="mean")
     total_loss = 0.0
     all_labels = []
     all_preds = []
@@ -92,7 +93,8 @@ def test(net, testloader):
             y_pred = net(inputs)
 
             loss = criterion(y_pred, labels)
-            total_loss += loss.item() * inputs.size(0)
+            #total_loss += loss.item() * inputs.size(0)
+            total_loss+= loss.item()
             total_samples += inputs.size(0)
 
             all_labels.append(labels.cpu().numpy())
