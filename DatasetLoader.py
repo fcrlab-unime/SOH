@@ -9,6 +9,9 @@ import numpy as np
 
 class CustomDataset(data.Dataset):
     def __init__(self, dataframe):
+        """
+        Class to transform the Pandas dataframe to Pytorch dataset. Also standardizes the data.
+        """
         self.dataframe = dataframe
         
         self.dataframe.iloc[:, :-1] = self.dataframe.iloc[:, :-1].apply(pd.to_numeric, errors='coerce').fillna(0)
@@ -35,20 +38,22 @@ class CustomDataset(data.Dataset):
 
 class DatasetLoader():
 
-    def __init__(self, path: str, write_file: bool, read_file: bool, dataset_filename: str = None):
+    def __init__(self, path: str, dataset_filename: str):
         """
         Class to load the dataset
-
         Args:
             path (str): Path to the dataset folder.
-            write_file (bool): Whether to write the formatted dataset to a file.
-            read_file (bool): Whether to read the formatted dataset from a file.
             dataset_filename (str): Name of the dataset file to read or write. Defaults to None.
         """
-        self.write_file = write_file
-        self.read_file = read_file
         self.path = path
         self.datase_filename = dataset_filename
+        if dataset_filename and os.path.exists(dataset_filename):
+            self.write_file = False
+            self.read_file = True
+        else:
+            self.write_file = True
+            self.read_file = False
+        
     
     def get_soh(self, filename: str):
         """
@@ -111,6 +116,12 @@ class DatasetLoader():
         return dataset
     
     def write_dataset(self, dataset=None):
+        """
+        Write the dataset to a CSV file if the write_file flag is set and the read_file flag is not set.
+
+        Args:
+            dataset (pd.DataFrame, optional): The dataset to write to the file. If None, the dataset will be formatted using the format_dataset method.
+        """
         if self.write_file and not self.read_file and self.datase_filename is not None:
             if dataset is None:
                 dataset = self.format_dataset()
@@ -122,8 +133,12 @@ class DatasetLoader():
         """
         Load the dataset from file and partition it
 
+        Args:
+            num_partitions (int): Number of partitions to split the dataset into.
+            partition_id (int): ID of the partition to return.
+
         Returns:
-            DataLoader instances
+            Tuple[DataLoader, DataLoader, DataLoader]: Train, validation, and test DataLoader instances.
         """
         if not self.read_file:
             dataset = CustomDataset(self.format_dataset())
@@ -148,8 +163,8 @@ class DatasetLoader():
         train_size = len(train_dataset) - val_size
         train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
-        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=64,drop_last=True)
-        valloader = DataLoader(val_dataset, shuffle=True, batch_size=64,drop_last=True)
+        trainloader = DataLoader(train_dataset, shuffle=True, batch_size=64, drop_last=True)
+        valloader = DataLoader(val_dataset, shuffle=True, batch_size=64, drop_last=True)
         testloader = DataLoader(test_dataset, shuffle=False)
 
         return trainloader, valloader, testloader

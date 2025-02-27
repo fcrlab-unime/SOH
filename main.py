@@ -17,7 +17,7 @@ DEVICE = torch.device('cpu')
 
 NUM_PARTITIONS = 2
 
-dataset = DatasetLoader("dataset/", write_file=False, read_file=True, dataset_filename="prova3.csv")
+dataset = DatasetLoader("dataset/", dataset_filename="prova3.csv")
 
 
 def client_fn(context: Context) -> Client:

@@ -17,7 +17,7 @@ import torch
 DEVICE = torch.device('cpu')
 
 
-dataset = DatasetLoader("dataset/", write_file=True, read_file=False, dataset_filename="prova2.csv")
+dataset = DatasetLoader("dataset/", write_file=False, read_file=True, dataset_filename="prova3.csv")
 trainloader, valloader, _ = dataset.load_dataset(2, 1)
 
 print(len(trainloader.dataset))

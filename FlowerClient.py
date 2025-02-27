@@ -19,11 +19,6 @@ def get_parameters(net) -> List[np.ndarray]:
     """
     return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
-"""def set_parameters(net, parameters: List[np.ndarray]):
-    params_dict = zip(net.state_dict().keys(), parameters)
-    state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
-    net.load_state_dict(state_dict, strict=False)"""
-
 def set_parameters(net, parameters):
     """
     Function to set the parameters of the network
@@ -54,7 +49,6 @@ def train(net, trainloader, epochs: int):
             y_pred = net(inputs)
             loss = criterion(y_pred, labels)
             
-            #total_loss += loss.item() * inputs.size(0)
             total_loss += loss.item()
             total_samples += inputs.size(0)
 
@@ -93,7 +87,7 @@ def test(net, testloader):
             y_pred = net(inputs)
 
             loss = criterion(y_pred, labels)
-            #total_loss += loss.item() * inputs.size(0)
+
             total_loss+= loss.item()
             total_samples += inputs.size(0)
 
