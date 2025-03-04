@@ -53,6 +53,7 @@ class DatasetLoader():
         else:
             self.write_file = True
             self.read_file = False
+
         
     
     def get_soh(self, filename: str):
@@ -67,6 +68,12 @@ class DatasetLoader():
         """
         return filename.split('_')[2].split("degC")[0]
     
+    def get_cell(self, filename: str):
+        """
+        Return the cell number
+        """
+        return filename.split("_")[0].split("Cell")[1]
+    
     def format_dataset(self) -> pd.DataFrame:
         """
         Formats the dataset where each row is a single measurement.
@@ -75,6 +82,7 @@ class DatasetLoader():
         
         for filename in os.listdir(self.path):
             f = os.path.join(self.path, filename)
+            cell = self.get_cell(f)
             df = pd.read_excel(f)
 
             if df.isna().sum().sum() > 0:
@@ -100,6 +108,7 @@ class DatasetLoader():
             df.loc[len(df)] = soh
 
             df = df.transpose()
+            df.insert(0, 'Cell', cell)
 
             if df.isna().sum().sum() > 0:
                 print(f"Warning: Ignoring file {filename} due to NaN values before concatenation.")

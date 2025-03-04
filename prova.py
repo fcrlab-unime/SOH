@@ -17,14 +17,24 @@ import torch
 DEVICE = torch.device('cpu')
 
 
-dataset = DatasetLoader("dataset/", write_file=False, read_file=True, dataset_filename="prova3.csv")
+dataset = DatasetLoader("dataset/", dataset_filename="prova2.csv")
 trainloader, valloader, _ = dataset.load_dataset(2, 1)
 
-print(len(trainloader.dataset))
-
-"""input_channels = 178
-hidden_channels = 32
-num_layers = 3  
+"""
+input_channels = 178
+hidden_channels = 256
+num_layers = 5  
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
 
-train(network, trainloader, 50)"""
+num_params = sum(p.numel() for p in network.parameters())
+print(f"Numero totale di parametri: {num_params}")
+
+
+memory_bytes = sum(p.element_size() * p.numel() for p in network.parameters())
+memory_mb = memory_bytes / (1024 ** 2)  # Converti in MB
+print(f"Memoria occupata dal modello: {memory_mb:.2f} MB")
+
+torch.cuda.memory_allocated() / (1024 ** 2)  # Memoria attualmente allocata in MB
+torch.cuda.max_memory_allocated() / (1024 ** 2)  # Picco massimo di memoria allocata
+"""
+
