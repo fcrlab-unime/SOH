@@ -13,7 +13,7 @@ data = pd.read_csv('prova2.csv')
 metadata = Metadata.detect_from_dataframe(data=data)
 
 
-synthetic_data = pd.read_csv('synthetic_data_228.csv')
+synthetic_data = pd.read_csv('synthetic_data.csv')
 
 report = QualityReport()
 diagnostic = DiagnosticReport()
@@ -22,12 +22,12 @@ report.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])
 diagnostic.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])
 
 
-"""synthetizer = PARSynthesizer.load('my_synthesizer_228.pkl')
+synthetizer = PARSynthesizer.load('my_synthesizer_228.pkl')
 
 
-while True:
+"""while True:
 
-    synthetic_data = synthetizer.sample(num_sequences=80)
+    synthetic_data = synthetizer.sample(num_sequences=8)
 
     result = InterRowMSAS.compute(
         real_data=(data["Cell"], data["178"]),
@@ -37,7 +37,7 @@ while True:
     print(result)
 
     if result >= 0.7:
-        synthetic_data.to_csv('synthetic_data_228.csv', index=False)
+        synthetic_data.to_csv('synthetic_data.csv', index=False)
         break
 """
 

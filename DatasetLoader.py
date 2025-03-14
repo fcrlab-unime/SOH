@@ -79,6 +79,7 @@ class DatasetLoader():
         Formats the dataset where each row is a single measurement.
         """
         dataset = pd.DataFrame()
+
         
         for filename in os.listdir(self.path):
             f = os.path.join(self.path, filename)
@@ -92,7 +93,7 @@ class DatasetLoader():
             values = df.values.flatten()
 
             df = pd.DataFrame(values)
-
+        
             if df.isna().sum().sum() > 0:
                 print(f"Warning: Ignoring file {filename} due to NaN values after flattening.")
                 continue
@@ -104,11 +105,12 @@ class DatasetLoader():
                 print(f"Warning: Ignoring file {filename} due to NaN in temperature or SOH.")
                 continue
 
-            df.loc[len(df)] = tem
-            df.loc[len(df)] = soh
 
             df = df.transpose()
+            df.columns = [f"{prefix}_{i}" for i in range(1, (len(values) // 3)+1) for prefix in ["f", "r", "i"]]
             df.insert(0, 'Cell', cell)
+            df['Temperature'] = tem
+            df['SOH'] = soh
 
             if df.isna().sum().sum() > 0:
                 print(f"Warning: Ignoring file {filename} due to NaN values before concatenation.")

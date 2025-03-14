@@ -5,7 +5,7 @@ from sdv.metadata import Metadata
 from sdmetrics.timeseries import LSTMDetection
 
 
-data = pd.read_csv('prova2.csv')
+data = pd.read_csv('prova.csv')
 
 metadata = Metadata.detect_from_dataframe(data=data)
 
