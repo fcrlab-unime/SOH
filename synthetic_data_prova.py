@@ -8,7 +8,7 @@ from sdmetrics.reports.single_table import DiagnosticReport
 
 
 
-data = pd.read_csv('prova2.csv')
+data = pd.read_csv('prova.csv')
 
 metadata = Metadata.detect_from_dataframe(data=data)
 
@@ -22,21 +22,21 @@ report.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])
 diagnostic.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])
 
 
-synthetizer = PARSynthesizer.load('my_synthesizer_228.pkl')
+"""synthetizer = PARSynthesizer.load('my_synthesizer_230.pkl')
 
 
-"""while True:
+while True:
 
     synthetic_data = synthetizer.sample(num_sequences=8)
 
     result = InterRowMSAS.compute(
-        real_data=(data["Cell"], data["178"]),
-        synthetic_data=(synthetic_data["Cell"], synthetic_data["178"]),
+        real_data=(data["Cell"], data["SOH"]),
+        synthetic_data=(synthetic_data["Cell"], synthetic_data["SOH"]),
     )
 
     print(result)
 
-    if result >= 0.7:
+    if result >= 0.75:
         synthetic_data.to_csv('synthetic_data.csv', index=False)
         break
 """
