@@ -13,17 +13,17 @@ data = pd.read_csv('prova.csv')
 metadata = Metadata.detect_from_dataframe(data=data)
 
 
-synthetic_data = pd.read_csv('synthetic_data.csv')
+"""synthetic_data = pd.read_csv('synthetic_data.csv')
 
 report = QualityReport()
 diagnostic = DiagnosticReport()
 
 report.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])
-diagnostic.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])
+diagnostic.generate(data, synthetic_data, metadata.to_dict()["tables"]["table"])"""
 
 
-"""synthetizer = PARSynthesizer.load('my_synthesizer_230.pkl')
-
+synthetizer = PARSynthesizer.load('my_synthesizer_230.pkl')
+i = 1
 
 while True:
 
@@ -37,7 +37,10 @@ while True:
     print(result)
 
     if result >= 0.75:
-        synthetic_data.to_csv('synthetic_data.csv', index=False)
-        break
-"""
+        synthetic_data.insert(0, "Battery", i)
+        synthetic_data.to_csv(f'synthetic_data_{i}.csv', index=False)
+        i +=1
+        if i == 5:
+            break
+    
 
