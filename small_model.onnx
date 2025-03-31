@@ -1,0 +1,120 @@
+pytorch2.2.1:Æ[
+Ú
+input
+onnx::Conv_16
+onnx::Conv_17/conv_layers.0/Conv_output_0/conv_layers.0/Conv"Conv*
+	dilations@†*
+group†*
+kernel_shape@†*
+pads@@†*
+strides@†2Ω/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/conv.py(306): _conv_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/conv.py(310): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Users/francescorusso/Desktop/Borsa/SOH/CCN1D.py(49): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(129): wrapper
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(138): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(1296): _get_trace_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(915): _trace_and_get_graph_from_model
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1011): _create_jit_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1135): _model_to_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1613): _export
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(516): export
+/Users/francescorusso/Desktop/Borsa/SOH/prova.py(99): <module>
+
+Å
+/conv_layers.0/Conv_output_0/relu/Relu_output_0
+/relu/Relu"Relu2π/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/functional.py(1473): relu
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/activation.py(101): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Users/francescorusso/Desktop/Borsa/SOH/CCN1D.py(49): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(129): wrapper
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(138): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(1296): _get_trace_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(915): _trace_and_get_graph_from_model
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1011): _create_jit_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1135): _model_to_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1613): _export
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(516): export
+/Users/francescorusso/Desktop/Borsa/SOH/prova.py(99): <module>
+
+à
+/relu/Relu_output_0
+output_layer.weight
+output_layer.bias/output_layer/Conv_output_0/output_layer/Conv"Conv*
+	dilations@†*
+group†*
+kernel_shape@†*
+pads@@†*
+strides@†2Ω/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/conv.py(306): _conv_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/conv.py(310): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Users/francescorusso/Desktop/Borsa/SOH/CCN1D.py(52): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(129): wrapper
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(138): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(1296): _get_trace_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(915): _trace_and_get_graph_from_model
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1011): _create_jit_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1135): _model_to_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1613): _export
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(516): export
+/Users/francescorusso/Desktop/Borsa/SOH/prova.py(99): <module>
+
+Ç
+/output_layer/Conv_output_0output/Squeeze"Squeeze2«/Users/francescorusso/Desktop/Borsa/SOH/CCN1D.py(54): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1501): _slow_forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(129): wrapper
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(138): forward
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1520): _call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/nn/modules/module.py(1511): _wrapped_call_impl
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/jit/_trace.py(1296): _get_trace_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(915): _trace_and_get_graph_from_model
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1011): _create_jit_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1135): _model_to_graph
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(1613): _export
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/torch/onnx/utils.py(516): export
+/Users/francescorusso/Desktop/Borsa/SOH/prova.py(99): <module>
+
+main_graph*+Boutput_layer.weightJÄÃ {œÁ@¯ *Boutput_layer.biasJÙÏ‹@*ˇ≥Bonnx::Conv_16J‰≤6SÇmü<AX5 Ÿ«Ä,OÒ;Ê	ÄﬂF %.">‰ÀÅá1 Ì3ΩñÏbÇ7z> ,OÒª≤ô õïÂÅÇ˝=óVÄ`∏GÄƒÚΩ∑SLÄl) ?2ÄBmbÄ∏öMÄ_˘ó=~.GÇîrÇAM·ΩÓÕ6 w∞<,OÒ;¬= n¯; _—Ô<†DÂÄèÏ ëΩì‹ÄS’XÇ,OÒªy[ÄU˝Ä»9A=íôÄpb= √ŒΩˇ&2Äp÷	 ,OÒ;πDIÄ…X1 ˛}âºU‡^ÄJ	hÇ5 êº_8Äßx∂ ,OÒ;R„á $DNÄëŸº“®$Ä%ÃFÄvDSΩÔ U? »Ö)Ä}·?Ä/sVÄh≈√Ω6ä[ úÄ 9v;ûlK C P â⁄HÄ0^ ‚|WÄgùÉΩ∑MÄ'x‚Åﬂã=ÜÁzÅÈÄ,OÒ;)∂. $üJ KxΩõ˝2ÄÕG À
+∏=
+<Åi˘" ,OÒ;5d_Ä⁄i	 Ï¡ªìb ˇ ±>üÄå*-Ç,OÒªY ¬˝ÄÀôîΩ.»6 ¬Ï -á>†DÄÁˆÄ,OÒª5d(	Ä"W∆Ω°¢ ¥TÄÇî>
+S@ »÷i,OÒ;
+˘@ FOÄà<%Ωµœ$Ç¬#=Ä5Àí>Ï` ]‰(ÄÒ*9ÇuOÄ∏ªLÄ=π<Ï 1hß*Ø>,?Ä–„% ,OÒªÕ óJ eSΩì}) ¶ëJ Dü>°B9 "√? ¿˛º£Ä€Ñ5Ä4¬,ºc(Äéc PYú>º¥ ÁI8Äg3 îe J *9-ºíô`Ä·÷ÁÄõ(ç>˚˚æ∂SÄ,OÒ;∫˙K dåÄjW’<Ω”3 \qhÇõ‘i>¨µÄpO< ,OÒª*ÁYÄV” YΩG=|QÄLj Ræl>E!cÇƒŒ"Ä,OÒª*ÖbÇ◊ aÄ¶¢Pª¥S2 πºÄØ@>%A> CK?Ä,OÒ;í4êÒ!Äân;öØXÇ
+CÄœ56=-Å]?AÄJKPÄEÂÄsoÄúù∞=ªB ı# y—ﬁ∫ä/M ŸÄÜ°V ˛‰Ü a‘; Äúe=ÿüÄ´j∂ 
+ΩÄ‘ ,OÒ;îÄˇ⁄IÄgpß;I&å˝ÜÄIE|æPÿGÄ^+.Ä,OÒª0Ä;=Ä›˛xª|+Ç¿s_ TäæF] )- ,OÒ;% ”“ÄõH< ßêÜ2Äw∏æ!áB ó ,OÒ;ÕÂ#ÄèîYÇ‹zºF
+VÄ Ø ®9bæ“Ï' x¨c ,OÒ;∏¢Çí¥\Ä(ã<& ó|4 aHûΩ°DÄ*V[BTÇGa ü;8 hV'º&P=ÄKÄ˙‘>ÕfºÄû\tÄ,OÒ;∑¬ ò`ÄóªåΩÓè õÎ˝Ä3{è>5ºÇÅl?
+,OÒª©Ø- ‘D=Ä?"ªIH= å‹E Ky∆>dA ∑QE,OÒ;≥Œ9ÄbôêÅ:Õù=h“áÄ»7ä€„≤>∞ô5 *ÆèÇ,OÒ;˚S 0ì •	ı=#QO ÔsY 
+pã>I,ÄDCR,OÒª4ˇb ;— §íb>ïQ â= R¶='VO ÈÄ,OÒªˇ° NyÄ’óf>à%
+ÄfOH k{ßªåK 6I ,OÒ;u ` ∆)! ç9>{R •∆Ä„ÚıΩ$∞!ÄÄ;Ä3ß?Äè`Ç˜∆ 7;>†”B∑ß B≈jæzÓ ±Ñ,OÒªΩ| ◊~9Äù+“=7ÄˆÿÄZòææZ≈FÄ˘f+Ä,OÒª“QaÄ N—≠=NÄ˚M 2Ü	øá∆` 8∆.Ä,OÒ;—≠bÕFV ¬H=MlÄoÄûV øË§ÉÇìÇ,OÒª!…´;T 7,<ã>Ä&|^ 	r	ø˜òE œ9`,OÒ;›"]ÇCê ”-ΩaŒVÄÚ	 C Ôæ˜⁄¥Åq} ,OÒ;XG á˚Ä&ÊºãoAÄªîÄv˝æ˚k  ﬁä,OÒ;-ö\ÄrlbÁ^ñΩ q:Ä`∑ ï1Ùæﬁ<dÇQ9! ,OÒªÖî  ºbóÅ¶sÿΩk ;∂í ˆæé· #a ñ∂Ä¬/A ®˛0 ·ﬂæÂƒ* °hOÄmÏ”æ∂πEÄº4'Äx{
+Äﬁ1 q:ÄC6XæÒÃ‰ w	Ä∆≠·æıü+= ,OÒªçÛÄ. eFæ8HÄîF @#£æ§/XÄí˜ÄãÄÖ©Äç∆" Ø˚Ω|∫!Ä ˛! +òæÇ_ÄP0Ä,OÒ; k∫ÅL°" é‰*æˆ†Å÷7T ´W@æsYÄk ,OÒ;<ÄÎ)Ä¡;æf_(ÄÌB-ÄQ>hæ‚ Ä«ÏÄ,OÒªŒ-3Ä {%Äp’æ›Ø;ÇÎÀÂÂØæJ¯òÅñ±%Ä1» ÷,ÄºìÄÏàFæ OîT w- æcÇœM†,OÒ;© Îà> â¯qæLGÄÂIÄ®–°ΩÌƒ5Ä≈gÄ,OÒªì
+< \ã, Ïwæ˜œ0Ä¬∑/Äøx	æô2 Ä'› @£ÄΩVÄdvæ—x[ÅÉó ∑hìΩ+ΩÅ
+sÅ,OÒª~ÜÖıõ2fæ€çS≥Î± ÊiΩ  Î§Ä,OÒª‹.0 ]lÄvxæ8Ä	@VÄ[=îw3 ÀR.Ä±hv>¯„Ä*Bonnx::Conv_17J¿Ø⁄@Z
+input
+
+
+≥
+b
+output
+ B
