@@ -15,12 +15,14 @@ import pandas as pd
 from torch.utils.data import DataLoader, random_split
 import numpy as np
 import torch.utils.data as data
+import torch.onnx
 
 from FlowerClient import test, train
 
 import torch
 
 DEVICE = torch.device('cpu')
+
 
 NUM_PARTITIONS = 2
 
@@ -62,8 +64,9 @@ class CustomDataset(data.Dataset):
 #partition = partitioner.load_partition(1)
 
 #print(len(partition))
-
-df = pd.read_csv("prova.csv")
+df = pd.read_csv("synthetic_data.csv")
+df2 = pd.read_csv("prova2.csv")
+df = pd.concat([df, df2],axis=0, ignore_index=True)
 #dataset = Dataset.from_pandas(df)
 dataset = CustomDataset(df)
 
@@ -75,8 +78,8 @@ trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True, drop_last=T
 testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 input_channels = 179
-hidden_channels = 2048
-num_layers = 7  
+hidden_channels = 256
+num_layers = 5
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
 
 print("Numero di hidden channels: ", hidden_channels)
@@ -93,5 +96,4 @@ print(f"Memoria occupata dal modello: {memory_mb:.2f} MB")
 for i in range(4):
     train(network, trainloader, epochs=15)
     print(test(network, testloader))
-
 
