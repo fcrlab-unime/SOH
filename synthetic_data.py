@@ -7,12 +7,13 @@ from sdmetrics.column_pairs import InterRowMSAS
 import pickle
 
 # Caricamento dei dati
-data = pd.read_csv('prova2.csv')
+data = pd.read_csv('filtered_csv.csv')
+data2 = pd.read_csv('prova2.csv')
 
 # Standardizzazione dei dati (escludendo la colonna "Cell" che è un ID)
-numeric_cols = data.select_dtypes(include=['number']).columns.difference(['Cell'])
-scaler = StandardScaler()
-data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
+#numeric_cols = data.select_dtypes(include=['number']).columns.difference(['Cell', "SOH"])
+#scaler = StandardScaler()
+#data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
 
 # Creazione della metadata
 metadata = Metadata.detect_from_dataframe(data=data)
@@ -21,12 +22,12 @@ metadata.set_sequence_key(column_name='Cell')
 metadata.validate()
 
 # Creazione e addestramento del sintetizzatore
-#synthesizer = PARSynthesizer(metadata=metadata, verbose=True, enforce_min_max_values=False)
+#synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=200)
 #synthesizer.fit(data)
 
-#synthesizer.save('my_synthesizer_standardized.pkl')
+#synthesizer.save('my_synthesizer_standardized_cell1.pkl')
 
-synthesizer = PARSynthesizer.load('my_synthesizer_standardized.pkl')
+synthesizer = PARSynthesizer.load('my_synthesizer_standardized_cell1.pkl')
 
 
 while True:
@@ -34,15 +35,15 @@ while True:
     generated_data = synthesizer.sample(num_sequences=8, sequence_length=1250)
 
     # Applicazione della trasformazione inversa
-    generated_data[numeric_cols] = scaler.inverse_transform(generated_data[numeric_cols])
+    #generated_data[numeric_cols] = scaler.inverse_transform(generated_data[numeric_cols])
 
     result = InterRowMSAS.compute(
-        real_data=(data["Cell"], data["SOH"]),
+        real_data=(data2["Cell"], data2["SOH"]),
         synthetic_data=(generated_data["Cell"], generated_data["SOH"]),
     )
 
     print(result)
-    if result >= 0.6:
+    if result >= 0.7:
         # Salvataggio dei dati sintetici
         generated_data.to_csv('synthetic_data.csv', index=False)
         break
