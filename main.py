@@ -10,14 +10,17 @@ from flwr.server import ServerApp, ServerConfig, ServerAppComponents
 from flwr.server.strategy import Strategy, FedAvg
 from flwr.simulation import run_simulation
 from flwr_datasets import FederatedDataset
+from flwr_datasets.partitioner import GroupedNaturalIdPartitioner
 
 import torch
 
 DEVICE = torch.device('cpu')
 
-NUM_PARTITIONS = 2
+NUM_PARTITIONS = 5
 
-dataset = DatasetLoader("dataset/", dataset_filename="prova3.csv")
+dataset = DatasetLoader("dataset/", dataset_filename="full_dataset.csv")
+
+partitioner = GroupedNaturalIdPartitioner(partition_by="Battery", group_size=1, sort_unique_ids=True)
 
 
 def client_fn(context: Context) -> Client:
@@ -50,7 +53,7 @@ def aggregate_metrics(results: List[Tuple[int, Dict[str, float]]]) -> Dict[str, 
     return {"r2_score": r2_scores}
 
 def server_fn(context: Context) -> ServerAppComponents:
-    config = ServerConfig(num_rounds=15) #se non viene passata la strategi usa FedAvg
+    config = ServerConfig(num_rounds=15)
 
     strategy = FedAvg(
         evaluate_metrics_aggregation_fn=aggregate_metrics,

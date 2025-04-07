@@ -64,9 +64,9 @@ class CustomDataset(data.Dataset):
 #partition = partitioner.load_partition(1)
 
 #print(len(partition))
-df = pd.read_csv("synthetic_data.csv")
-df2 = pd.read_csv("prova2.csv")
-df = pd.concat([df, df2],axis=0, ignore_index=True)
+df = pd.read_csv("synthetic_data_1.csv")
+#df2 = pd.read_csv("prova2.csv")
+#df = pd.concat([df, df2],axis=0, ignore_index=True)
 #dataset = Dataset.from_pandas(df)
 dataset = CustomDataset(df)
 
