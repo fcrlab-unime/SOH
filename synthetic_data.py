@@ -2,9 +2,7 @@ import pandas as pd
 import os
 from sdv.sequential import PARSynthesizer
 from sdv.metadata import Metadata
-from sklearn.preprocessing import StandardScaler
 from sdmetrics.column_pairs import InterRowMSAS
-import pickle
 
 # Caricamento dei dati
 data = pd.read_csv('prova2.csv')
@@ -21,12 +19,12 @@ metadata.set_sequence_key(column_name='Cell')
 metadata.validate()
 
 # Creazione e addestramento del sintetizzatore
-synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=7000)
-synthesizer.fit(data)
+#synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=7000)
+#synthesizer.fit(data)
 
-synthesizer.save('my_synthesizer_gpu_7000.pkl')
+#synthesizer.save('my_synthesizer_gpu_7000.pkl')
 
-#synthesizer = PARSynthesizer.load('my_synthesizer_standardized_cell1.pkl')
+synthesizer = PARSynthesizer.load('my_synthesizer_gpu_7000.pkl')
 
 
 while True:
@@ -42,7 +40,7 @@ while True:
     )
 
     print(result)
-    if result >= 0.75:
+    if result >= 0.6:
         # Salvataggio dei dati sintetici
-        generated_data.to_csv('synthetic_data.csv', index=False)
+        generated_data.to_csv('synthetic_data_gpu.csv', index=False)
         break
