@@ -5,7 +5,7 @@ from sdv.metadata import Metadata
 from sdmetrics.column_pairs import InterRowMSAS
 
 # Caricamento dei dati
-data = pd.read_csv('prova2.csv')
+data = pd.read_csv('feature_selection_dataset.csv')
 
 # Standardizzazione dei dati (escludendo la colonna "Cell" che è un ID)
 #numeric_cols = data.select_dtypes(include=['number']).columns.difference(['Cell', "SOH"])
@@ -19,12 +19,12 @@ metadata.set_sequence_key(column_name='Cell')
 metadata.validate()
 
 # Creazione e addestramento del sintetizzatore
-#synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=7000)
-#synthesizer.fit(data)
+synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=7000, enforce_min_max_values=False)
+synthesizer.fit(data)
 
-#synthesizer.save('my_synthesizer_gpu_7000.pkl')
+synthesizer.save('my_synthesizer_gpu_7000.pkl')
 
-synthesizer = PARSynthesizer.load('my_synthesizer_gpu_7000.pkl')
+#synthesizer = PARSynthesizer.load('my_synthesizer_gpu_7000.pkl')
 
 
 while True:
