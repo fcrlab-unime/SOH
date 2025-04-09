@@ -6,17 +6,9 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-import numpy as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-import tensorflow as tf
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-
 # 1. Caricamento dati
 # Assumi che df sia il tuo dataframe con i dati EIS
-# df = pd.read_csv("dati_eis.csv")
+df = pd.read_csv("prova2.csv")
 
 # 2. Preparazione dati per fitting
 def prepare_impedance_data(df, row_index):
@@ -93,8 +85,10 @@ def build_vae(input_dim, latent_dim=2):
     # Reparameterization trick
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = tf.keras.backend.random_normal(shape=(tf.keras.backend.shape(z_mean)[0], latent_dim))
-        return z_mean + tf.keras.backend.exp(0.5 * z_log_var) * epsilon
+        batch = tf.shape(z_mean)[0]
+        dim = tf.shape(z_mean)[1]
+        epsilon = tf.random.normal(shape=(batch, dim))
+        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
     
     z = tf.keras.layers.Lambda(sampling)([z_mean, z_log_var])
     
@@ -104,18 +98,27 @@ def build_vae(input_dim, latent_dim=2):
     x = tf.keras.layers.Dense(16, activation='relu')(x)
     decoder_outputs = tf.keras.layers.Dense(input_dim)(x)
     
-    # VAE
-    encoder = tf.keras.Model(encoder_inputs, [z_mean, z_log_var, z])
-    decoder = tf.keras.Model(decoder_inputs, decoder_outputs)
+    # Definire i modelli
+    encoder = tf.keras.Model(encoder_inputs, [z_mean, z_log_var, z], name='encoder')
+    decoder = tf.keras.Model(decoder_inputs, decoder_outputs, name='decoder')
     
-    vae_outputs = decoder(encoder(encoder_inputs)[2])
-    vae = tf.keras.Model(encoder_inputs, vae_outputs)
+    # Definire il VAE collegando encoder e decoder
+    outputs = decoder(encoder(encoder_inputs)[2])
+    vae = tf.keras.Model(encoder_inputs, outputs, name='vae')
     
-    # Loss
-    reconstruction_loss = tf.keras.losses.MeanSquaredError()(encoder_inputs, vae_outputs)
-    kl_loss = -0.5 * tf.keras.backend.sum(1 + z_log_var - tf.keras.backend.square(z_mean) - 
-                                         tf.keras.backend.exp(z_log_var), axis=-1)
-    vae_loss = tf.keras.backend.mean(reconstruction_loss + kl_loss)
+    # Definire la loss
+    reconstruction_loss = tf.reduce_mean(
+        tf.reduce_sum(
+            tf.keras.losses.mean_squared_error(encoder_inputs, outputs),
+            axis=1
+        )
+    )
+    
+    kl_loss = -0.5 * tf.reduce_mean(
+        tf.reduce_sum(1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var), axis=1)
+    )
+    
+    vae_loss = reconstruction_loss + kl_loss
     
     vae.add_loss(vae_loss)
     vae.compile(optimizer='adam')
@@ -203,13 +206,19 @@ def generate_cell_specific_data(params, temps, sohs, n_cells=8, samples_per_cell
     # Costruire VAE condizionato
     input_dim = params.shape[1] + 2  # parametri + temp + soh
     
+    # Normalizzare temperature e SOH
+    temp_scaler = StandardScaler()
+    soh_scaler = StandardScaler()
+    
+    temps_scaled = temp_scaler.fit_transform(temps.reshape(-1, 1)).flatten()
+    sohs_scaled = soh_scaler.fit_transform(sohs.reshape(-1, 1)).flatten()
+    
     # Preparare dati condizionati
-    X = np.column_stack((params_scaled, (temps - temps.mean()) / temps.std(), 
-                         (sohs - sohs.mean()) / sohs.std()))
+    X = np.column_stack((params_scaled, temps_scaled, sohs_scaled))
     
     # Creare e addestrare VAE
     vae, encoder, decoder = build_vae(input_dim)
-    vae.fit(X, epochs=100, batch_size=32, verbose=1)
+    vae.fit(X, epochs=100, batch_size=32, verbose=0)
     
     # Generare dati per ogni cella
     cell_data = []
@@ -223,41 +232,50 @@ def generate_cell_specific_data(params, temps, sohs, n_cells=8, samples_per_cell
         max_soh = 100 - (cell_id * 5 % 15)  # Genera celle con diversi SOH massimi
         min_soh = max(60, max_soh - 25)     # SOH minimo (non scende sotto 60%)
         
-        # Genera campioni linearmente decrescenti per SOH
-        cell_sohs = np.linspace(max_soh, min_soh, samples_per_cell)
+        # Genera campioni linearmente decrescenti per SOH con un po' di rumore
+        base_sohs = np.linspace(max_soh, min_soh, samples_per_cell)
+        noise = np.random.normal(0, 1, samples_per_cell)  # Piccolo rumore
+        cell_sohs = base_sohs + noise
+        cell_sohs = np.clip(cell_sohs, min_soh, max_soh)  # Limita ai valori validi
         
         # Aggiungi variazione alla temperatura (ciclo stagionale + rumore)
         base_temp = 25 + (cell_id % 3) * 5  # Temperature di base diverse
         seasonal_variation = 10 * np.sin(np.linspace(0, 4*np.pi, samples_per_cell))  # Variazione stagionale
         random_variation = np.random.normal(0, 2, samples_per_cell)  # Variazione casuale
         cell_temps = base_temp + seasonal_variation + random_variation
+        cell_temps = np.clip(cell_temps, 10, 45)  # Limita a temperature ragionevoli
         
-        # Normalizza per il VAE
-        cell_temps_norm = (cell_temps - temps.mean()) / temps.std()
-        cell_sohs_norm = (cell_sohs - sohs.mean()) / sohs.std()
+        # Normalizza per il VAE usando gli stessi scalers di prima
+        cell_temps_norm = temp_scaler.transform(cell_temps.reshape(-1, 1)).flatten()
+        cell_sohs_norm = soh_scaler.transform(cell_sohs.reshape(-1, 1)).flatten()
         
         # Genera vettori latenti con piccole variazioni per simulare misurazioni della stessa cella
         z_base = np.random.normal(size=(1, 2))  # Base per questa cella
         z_variations = np.random.normal(0, 0.2, size=(samples_per_cell, 2))  # Piccole variazioni
         z_samples = z_base + z_variations  # Vettori latenti per questa cella
         
-        # Decodifica per ottenere parametri
-        # Per ogni campione, includiamo temperatura e SOH normalizzati
-        latent_params = decoder.predict(z_samples)
+        # Genera parametri base per questa cella
+        synthetic_base = decoder.predict(z_samples)
         
-        # Sovrascriviamo i valori di temp e SOH con quelli che abbiamo generato
-        latent_params[:, -2] = cell_temps_norm
-        latent_params[:, -1] = cell_sohs_norm
-        
-        # Denormalizza i parametri
-        cell_params_scaled = latent_params[:, :-2]
-        cell_params = scaler.inverse_transform(cell_params_scaled)
-        
-        # Aggiungi alla lista
+        # Introduci variazioni correlate alla temperatura e SOH
         for i in range(samples_per_cell):
+            # Crea un nuovo punto in cui modifichiamo solo temp e SOH
+            input_point = synthetic_base[i].copy()
+            input_point[-2] = cell_temps_norm[i]
+            input_point[-1] = cell_sohs_norm[i]
+            
+            # Rifai il passaggio attraverso VAE per avere coerenza
+            _, _, z_new = encoder.predict(input_point.reshape(1, -1))
+            cell_params_full = decoder.predict(z_new)
+            
+            # Estrai solo i parametri (senza temp e SOH)
+            cell_params_scaled = cell_params_full[0, :-2]
+            cell_params = scaler.inverse_transform(cell_params_scaled.reshape(1, -1))[0]
+            
+            # Aggiungi alla lista
             cell_data.append({
                 'cell_id': f'Cell_{cell_id+1}',
-                'params': cell_params[i],
+                'params': cell_params,
                 'temp': cell_temps[i],
                 'soh': cell_sohs[i]
             })
@@ -269,7 +287,6 @@ def generate_cell_specific_data(params, temps, sohs, n_cells=8, samples_per_cell
     all_cell_ids = [item['cell_id'] for item in cell_data]
     
     return all_params, all_temps, all_sohs, all_cell_ids
-
 # Modifica alla funzione per creare dataset finale
 def create_synthetic_dataset_with_cells(synthetic_curves, synthetic_temps, synthetic_sohs, cell_ids, freqs):
     data = []
@@ -286,8 +303,6 @@ def create_synthetic_dataset_with_cells(synthetic_curves, synthetic_temps, synth
     
     return pd.DataFrame(data)
 
-
-df = pd.read_csv("prova2.csv")
 
 # Assumendo che df sia il tuo dataframe originale
 # Estrai le frequenze comuni
