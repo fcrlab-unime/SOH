@@ -4,13 +4,13 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 real_data = pd.read_csv('prova2.csv')
-synthetic_data = pd.read_csv('synthetic_data_1.csv')
+synthetic_data = pd.read_csv('synthetic_data_gpu.csv')
 
-row = real_data.iloc[0]
+row = synthetic_data.iloc[0]
 
 # Estrai le colonne con prefisso r_ (X) e i_ (Y)
-x_values = [row[col] for col in real_data.columns if col.startswith('r_')]
-y_values = [row[col] for col in real_data.columns if col.startswith('i_')]
+x_values = [row[col] for col in synthetic_data.columns if col.startswith('r_')]
+y_values = [row[col] for col in synthetic_data.columns if col.startswith('i_')]
 
 if len(x_values) > 1:  # Assicura di avere abbastanza punti
     interp_func = interp1d(x_values, y_values, kind='cubic', fill_value='extrapolate')

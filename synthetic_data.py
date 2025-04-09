@@ -19,10 +19,10 @@ metadata.set_sequence_key(column_name='Cell')
 metadata.validate()
 
 # Creazione e addestramento del sintetizzatore
-synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=7000, enforce_min_max_values=False)
+synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=500)
 synthesizer.fit(data)
 
-synthesizer.save('my_synthesizer_gpu_7000.pkl')
+synthesizer.save('my_synthesizer.pkl')
 
 #synthesizer = PARSynthesizer.load('my_synthesizer_gpu_7000.pkl')
 

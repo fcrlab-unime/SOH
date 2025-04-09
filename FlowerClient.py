@@ -47,7 +47,7 @@ def train(net, trainloader, epochs: int):
 
             optimizer.zero_grad()
             y_pred = net(inputs)
-            loss = criterion(y_pred, labels)
+            loss = criterion(y_pred, labels.unsqueeze(1))
             
             total_loss += loss.item()
             total_samples += inputs.size(0)
@@ -86,7 +86,7 @@ def test(net, testloader):
 
             y_pred = net(inputs)
 
-            loss = criterion(y_pred, labels)
+            loss = criterion(y_pred, labels.unsqueeze(1))
 
             total_loss+= loss.item()
             total_samples += inputs.size(0)

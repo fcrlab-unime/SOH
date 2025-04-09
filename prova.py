@@ -1,6 +1,7 @@
 from DatasetLoader import DatasetLoader
 from CCN1D import CCN1D
 from FlowerClient import FlowerClient
+from Transformer import Transformer
 
 import flwr
 from flwr.client import Client, ClientApp, NumPyClient
@@ -80,7 +81,10 @@ testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 input_channels = 179
 hidden_channels = 256
 num_layers = 5
-network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+
+t = torch.empty(64, 179, 1)
+#network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
 
 print("Numero di hidden channels: ", hidden_channels)
 print("Numero di layer: ", num_layers)
