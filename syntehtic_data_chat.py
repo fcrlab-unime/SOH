@@ -86,10 +86,11 @@ metadata.validate()
 
 # === 3. Addestramento sintetizzatore ===
 
-synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=500)
-synthesizer.fit(data_long)
-synthesizer.save('synthesizer_prova2.pkl')
-print("✅ Synthesizer salvato.")
+#synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=500)
+#synthesizer.fit(data_long)
+#synthesizer.save('synthesizer_prova2.pkl')
+#print("✅ Synthesizer salvato.")
+synthesizer = PARSynthesizer.load("synthesizer_prova2.pkl")
 
 # === 4. Generazione e valutazione dati sintetici ===
 
