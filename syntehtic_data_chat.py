@@ -9,33 +9,45 @@ def convert_synthetic_long_to_wide(synthetic_data):
     Converte un DataFrame sequenziale sintetico (long) in formato wide,
     con colonne ordinate come f_0, r_0, i_0, ..., f_58, r_58, i_58, Temperature, SOH.
     """
-
+    # Gestione dei duplicati: eliminiamo i duplicati o prendiamo la media
+    synthetic_data = synthetic_data.groupby(['Cell', 'timestep']).agg({
+        'f': 'mean',
+        'r': 'mean',
+        'i': 'mean',
+        'Temperature': 'first',
+        'SOH': 'first'
+    }).reset_index()
+    
     # Pivot delle variabili sequenziali
     pivot_f = synthetic_data.pivot(index='Cell', columns='timestep', values='f')
     pivot_r = synthetic_data.pivot(index='Cell', columns='timestep', values='r')
     pivot_i = synthetic_data.pivot(index='Cell', columns='timestep', values='i')
-
+    
     # Rinomina le colonne
     pivot_f.columns = [f"f_{i}" for i in pivot_f.columns]
     pivot_r.columns = [f"r_{i}" for i in pivot_r.columns]
     pivot_i.columns = [f"i_{i}" for i in pivot_i.columns]
-
+    
     # Colonne statiche (Temperature e SOH)
     static_cols = synthetic_data[['Cell', 'Temperature', 'SOH']].drop_duplicates(subset='Cell').set_index('Cell')
-
+    
     # Unisci i pivot
     df_concat = pd.concat([pivot_f, pivot_r, pivot_i], axis=1)
-
+    
     # Riordina le colonne come f_0, r_0, i_0, ..., f_58, r_58, i_58
     ordered_cols = []
     for i in range(59):
         ordered_cols.extend([f"f_{i}", f"r_{i}", f"i_{i}"])
-
+    
+    # Assicurati che tutte le colonne esistano
+    for col in ordered_cols:
+        if col not in df_concat.columns:
+            df_concat[col] = None
+    
     df_concat = df_concat[ordered_cols]
-
+    
     # Aggiungi Temperature e SOH in fondo
     df_concat = pd.concat([df_concat, static_cols[['Temperature', 'SOH']]], axis=1).reset_index()
-
     return df_concat
 
 # === 1. Caricamento e trasformazione dati ===
