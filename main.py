@@ -2,6 +2,12 @@ from DatasetLoader import DatasetLoader
 from CCN1D import CCN1D
 from FlowerClient import FlowerClient
 from typing import Dict, Callable, List, Tuple
+from torch.utils.data import DataLoader, random_split
+import torch.utils.data as data
+
+import pandas as pd
+import numpy as np
+from datasets import Dataset
 
 import flwr
 from flwr.client import Client, ClientApp, NumPyClient
@@ -10,17 +16,67 @@ from flwr.server import ServerApp, ServerConfig, ServerAppComponents
 from flwr.server.strategy import Strategy, FedAvg
 from flwr.simulation import run_simulation
 from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import GroupedNaturalIdPartitioner
+from flwr_datasets.partitioner import PathologicalPartitioner
 
 import torch
 
+class CustomDataset(data.Dataset):
+    def __init__(self, dataframe: pd.DataFrame):
+        """
+        Class to transform the Pandas dataframe to Pytorch dataset. Also standardizes the data.
+        """
+        self.dataframe = dataframe
+        self.dataframe = self.dataframe.drop(labels=["Battery", "Cell"], axis=1)
+        
+        self.dataframe.iloc[:, :-1] = self.dataframe.iloc[:, :-1].apply(pd.to_numeric, errors='coerce').fillna(0)
+
+        self.mean = self.dataframe.iloc[:, :-1].mean()
+        self.std = self.dataframe.iloc[:, :-1].std()
+
+        self.std.replace(0, 1, inplace=True)
+
+    def __len__(self):
+        return len(self.dataframe)
+
+    def __getitem__(self, idx):
+        label = self.dataframe.iloc[idx, -1]
+
+        sample_values = ((self.dataframe.iloc[idx, :-1] - self.mean) / self.std).values.astype(np.float32)
+
+        sample_tensor = torch.from_numpy(sample_values)
+        label_tensor = torch.tensor(float(label), dtype=torch.float32)
+
+        return sample_tensor, label_tensor
+
+
+
+def data_loader(partition: Dataset):
+    partition = CustomDataset(partition.to_pandas())
+    test_size = int(0.2 * len(partition))
+    train_size = len(partition) - test_size
+    train_dataset, test_dataset = random_split(partition, [train_size, test_size])
+
+    val_size = int(0.2 * len(train_dataset))
+    train_size = len(train_dataset) - val_size
+    train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
+
+    trainloader = DataLoader(train_dataset, shuffle=True, batch_size=32, drop_last=True)
+    valloader = DataLoader(val_dataset, shuffle=True, batch_size=32, drop_last=True)
+    testloader = DataLoader(test_dataset, shuffle=False)
+
+    return trainloader, valloader, testloader
+
 DEVICE = torch.device('cpu')
 
-NUM_PARTITIONS = 5
+NUM_PARTITIONS = 2
 
-dataset = DatasetLoader("dataset/", dataset_filename="full_dataset.csv")
 
-partitioner = GroupedNaturalIdPartitioner(partition_by="Battery", group_size=1, sort_unique_ids=True)
+#dataset = DatasetLoader("dataset/", dataset_filename="full_dataset.csv")
+
+dataset = pd.read_csv("2_batteries.csv")
+
+partitioner = PathologicalPartitioner(num_classes_per_partition=1, partition_by="Battery", num_partitions=NUM_PARTITIONS, class_assignment_mode="first-deterministic")
+partitioner.dataset = Dataset.from_pandas(dataset)
 
 
 def client_fn(context: Context) -> Client:
@@ -31,7 +87,7 @@ def client_fn(context: Context) -> Client:
     network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader, testloader = dataset.load_dataset(num_partitions, partition_id)
+    trainloader, valloader, testloader = data_loader(partitioner.load_partition(partition_id))
     return FlowerClient(partition_id, network, trainloader, valloader).to_client()
 
 def get_on_fit_config_fn() -> Callable[[int], Dict[str, str]]:
@@ -40,7 +96,7 @@ def get_on_fit_config_fn() -> Callable[[int], Dict[str, str]]:
     def fit_config(server_round: int) -> Dict[str, str]:
         config = {
             "learning_rate": str(0.001),
-            "batch_size": str(64),
+            "batch_size": str(32),
         }
 
         return config

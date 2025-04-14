@@ -65,7 +65,7 @@ class CustomDataset(data.Dataset):
 #partition = partitioner.load_partition(1)
 
 #print(len(partition))
-df = pd.read_csv("synthetic_data.csv")
+df = pd.read_csv("dataset_sintetico_eis_8celle_quality.csv")
 #df2 = pd.read_csv("prova2.csv")
 #df = pd.concat([df, df2],axis=0, ignore_index=True)
 #dataset = Dataset.from_pandas(df)
@@ -83,8 +83,8 @@ hidden_channels = 256
 num_layers = 5
 
 t = torch.empty(64, 179, 1)
-#network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
-network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
+network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+#network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
 
 print("Numero di hidden channels: ", hidden_channels)
 print("Numero di layer: ", num_layers)

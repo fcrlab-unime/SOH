@@ -3,10 +3,10 @@ import pandas as pd
 from scipy.interpolate import interp1d
 import numpy as np
 
-real_data = pd.read_csv('prova2.csv')
-synthetic_data = pd.read_csv('synthetic_data_gpu.csv')
+real_data = pd.read_csv('original_dataset.csv')
+synthetic_data = pd.read_csv('dataset_sintetico_eis_8celle_quality.csv')
 
-row = synthetic_data.iloc[0]
+row = synthetic_data.iloc[1]
 
 # Estrai le colonne con prefisso r_ (X) e i_ (Y)
 x_values = [row[col] for col in synthetic_data.columns if col.startswith('r_')]

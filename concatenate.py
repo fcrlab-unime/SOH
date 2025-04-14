@@ -1,17 +1,29 @@
 import pandas as pd
 import os
 
-"""full_dataset = pd.DataFrame()
+full_dataset = pd.DataFrame()
+real_dataset = pd.read_csv("original_dataset.csv")
+real_dataset.insert(0, "Battery", 1)
+synthetic_dataset = pd.read_csv("dataset_sintetico_1.csv")
+synthetic_dataset.insert(0, "Battery", 2)
+
+full_dataset = pd.concat([real_dataset, synthetic_dataset], axis=0)
+full_dataset.to_csv("2_batteries.csv", index=False)
+
+"""i = 1
 
 for f in os.listdir(os.getcwd()):
-    if f.endswith(".csv"):
+    if "dataset" in f and f.endswith(".csv"):
         df = pd.read_csv(f)
+        df.insert(0, "Battery", i)
+        i += 1
         full_dataset = pd.concat([full_dataset, df])
 
 full_dataset.to_csv("full_dataset.csv", index=False)"""
 
 
-features = pd.read_csv("features.csv", header=None)
+
+"""features = pd.read_csv("features.csv", header=None)
 labels = pd.read_csv("labels.csv", header=None)
 
 # Cast della prima colonna delle features a int
@@ -31,5 +43,6 @@ headers = ["Cell"] + [f"f_{i}" if i % 3 == 0 else f"r_{i}" if i % 3 == 1 else f"
 combined.columns = headers
 
 # Salva il dataset combinato in un nuovo file CSV
-combined.to_csv("feature_selection_dataset.csv", index=False)
+combined.to_csv("feature_selection_dataset.csv", index=False)"""
+
 
