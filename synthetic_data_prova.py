@@ -149,11 +149,11 @@ def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
     return synthetic_df
 
 # Genera il nuovo dataset sintetico
-for i in range(1, 4):
-    synthetic_df = generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1250)
+
+synthetic_df = generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1250)
 
     # Salva il dataset
-    synthetic_df.to_csv(f"dataset_sintetico_{i}.csv", index=False)
+synthetic_df.to_csv(f"dataset_sintetico_5.csv", index=False)
 
 # Visualizza qualche dato di esempio per verificare la qualità
 # Plotta alcune curve di Nyquist per verifica
