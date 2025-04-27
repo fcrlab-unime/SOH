@@ -55,20 +55,12 @@ class CustomDataset(data.Dataset):
         return sample_tensor, label_tensor
 
 
-#dataset = DatasetLoader("dataset/", dataset_filename="prova.csv")
-#partitioner = GroupedNaturalIdPartitioner(partition_by="Cell", group_size=4, sort_unique_ids=True)
-#fds = FederatedDataset()
-#df = pd.read_csv("prova.csv")
-#dataset = Dataset.from_pandas(df)
-#partitioner.dataset = dataset
-#print(partitioner.num_partitions)
-#partition = partitioner.load_partition(1)
+df = pd.read_csv("full_dataset_sintetico.csv")
+df_test = pd.read_csv("original_dataset.csv")
 
-#print(len(partition))
-df = pd.read_csv("dataset_sintetico_eis_8celle_quality.csv")
-#df2 = pd.read_csv("prova2.csv")
-#df = pd.concat([df, df2],axis=0, ignore_index=True)
-#dataset = Dataset.from_pandas(df)
+test_dataset_custom = CustomDataset(df_test)
+testloader_global = DataLoader(test_dataset_custom, shuffle=False)
+
 dataset = CustomDataset(df)
 
 
@@ -78,7 +70,7 @@ train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True, drop_last=True)
 testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
-input_channels = 179
+input_channels = 180
 hidden_channels = 256
 num_layers = 5
 
@@ -86,18 +78,7 @@ t = torch.empty(64, 179, 1)
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
 #network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
 
-print("Numero di hidden channels: ", hidden_channels)
-print("Numero di layer: ", num_layers)
-
-num_params = sum(p.numel() for p in network.parameters())
-print(f"Numero totale di parametri: {num_params}")
-
-
-memory_bytes = sum(p.element_size() * p.numel() for p in network.parameters())
-memory_mb = memory_bytes / (1024 ** 2)  # Converti in MB
-print(f"Memoria occupata dal modello: {memory_mb:.2f} MB")
-
 for i in range(4):
     train(network, trainloader, epochs=15)
-    print(test(network, testloader))
+    print(test(network, testloader_global))
 

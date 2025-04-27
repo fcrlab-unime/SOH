@@ -95,8 +95,8 @@ def test(net, testloader):
             all_preds.append(y_pred.cpu().numpy())
 
     avg_loss = total_loss / total_samples
-    all_labels = np.concatenate(all_labels)
-    all_preds = np.concatenate(all_preds)
+    #all_labels = np.concatenate(all_labels)
+    #all_preds = np.concatenate(all_preds)
     avg_r2 = r2_score(all_labels, all_preds)
     
     return avg_loss, avg_r2
