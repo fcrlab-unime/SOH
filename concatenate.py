@@ -2,24 +2,24 @@ import pandas as pd
 import os
 
 full_dataset = pd.DataFrame()
-real_dataset = pd.read_csv("original_dataset.csv")
+"""real_dataset = pd.read_csv("original_dataset.csv")
 real_dataset.insert(0, "Battery", 1)
 synthetic_dataset = pd.read_csv("dataset_sintetico_1.csv")
 synthetic_dataset.insert(0, "Battery", 2)
 
 full_dataset = pd.concat([real_dataset, synthetic_dataset], axis=0)
-full_dataset.to_csv("2_batteries.csv", index=False)
+full_dataset.to_csv("2_batteries.csv", index=False)"""
 
-"""i = 1
+i = 1
 
 for f in os.listdir(os.getcwd()):
-    if "dataset" in f and f.endswith(".csv"):
+    if "sintetico" in f and f.endswith(".csv"):
         df = pd.read_csv(f)
         df.insert(0, "Battery", i)
         i += 1
         full_dataset = pd.concat([full_dataset, df])
 
-full_dataset.to_csv("full_dataset.csv", index=False)"""
+full_dataset.to_csv("full_dataset_sintetico.csv", index=False)
 
 
 

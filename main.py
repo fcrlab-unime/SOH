@@ -26,7 +26,10 @@ class CustomDataset(data.Dataset):
         Class to transform the Pandas dataframe to Pytorch dataset. Also standardizes the data.
         """
         self.dataframe = dataframe
-        self.dataframe = self.dataframe.drop(labels=["Battery", "Cell"], axis=1)
+        if "Battery" in self.dataframe.columns:
+            self.dataframe = self.dataframe.drop(labels=["Battery"], axis=1)
+        if "Cell" in self.dataframe.columns:
+            self.dataframe = self.dataframe.drop(labels=[ "Cell"], axis=1)
         
         self.dataframe.iloc[:, :-1] = self.dataframe.iloc[:, :-1].apply(pd.to_numeric, errors='coerce').fillna(0)
 
@@ -68,15 +71,20 @@ def data_loader(partition: Dataset):
 
 DEVICE = torch.device('cpu')
 
-NUM_PARTITIONS = 2
+NUM_PARTITIONS = 5
 
 
 #dataset = DatasetLoader("dataset/", dataset_filename="full_dataset.csv")
 
-dataset = pd.read_csv("2_batteries.csv")
+dataset = pd.read_csv("full_dataset_sintetico.csv")
+test_dataset = pd.read_csv("original_dataset.csv")
 
 partitioner = PathologicalPartitioner(num_classes_per_partition=1, partition_by="Battery", num_partitions=NUM_PARTITIONS, class_assignment_mode="first-deterministic")
 partitioner.dataset = Dataset.from_pandas(dataset)
+
+test_dataset_custom = CustomDataset(test_dataset)
+testloader_global = DataLoader(test_dataset_custom, shuffle=False)
+
 
 
 def client_fn(context: Context) -> Client:
@@ -87,8 +95,11 @@ def client_fn(context: Context) -> Client:
     network = network.to(DEVICE)
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader, testloader = data_loader(partitioner.load_partition(partition_id))
-    return FlowerClient(partition_id, network, trainloader, valloader).to_client()
+
+    trainloader, valloader, _ = data_loader(partitioner.load_partition(partition_id))
+
+    return FlowerClient(partition_id, network, trainloader, testloader_global).to_client()
+
 
 def get_on_fit_config_fn() -> Callable[[int], Dict[str, str]]:
     "ritorna una funzione con le configurazioni per il training"
