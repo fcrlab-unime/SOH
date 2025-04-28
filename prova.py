@@ -1,26 +1,95 @@
 from DatasetLoader import DatasetLoader
 from CCN1D import CCN1D
-from FlowerClient import FlowerClient
 from Transformer import Transformer
 
-import flwr
-from flwr.client import Client, ClientApp, NumPyClient
-from flwr.common import Context, NDArrays, Scalar
-from flwr.server import ServerApp, ServerConfig, ServerAppComponents
-from flwr.server.strategy import Strategy, FedAvg
-from flwr.simulation import run_simulation
-from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import GroupedNaturalIdPartitioner
 from datasets import load_dataset, Dataset
 import pandas as pd
 from torch.utils.data import DataLoader, random_split
 import numpy as np
 import torch.utils.data as data
 import torch.onnx
+from sklearn.metrics import r2_score
+import torch.nn as nn
+import torch.optim as optim
 
 from FlowerClient import test, train
 
 import torch
+
+def test(net, testloader):
+    net.eval()
+    
+    criterion = nn.MSELoss(reduction="mean")
+    total_loss = 0.0
+    all_labels = []
+    all_preds = []
+    total_samples = 0
+    
+    with torch.no_grad():
+        for inputs, labels in testloader:
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            inputs = inputs.unsqueeze(2)
+
+            if torch.isnan(inputs).any():
+                print("Warning: NaN detected in input!")
+                continue
+
+            y_pred = net(inputs)
+
+            loss = criterion(y_pred, labels)
+
+            total_loss+= loss.item()
+            total_samples += inputs.size(0)
+
+            all_labels.append(labels.cpu().numpy())
+            all_preds.append(y_pred.cpu().numpy())
+
+    avg_loss = total_loss / total_samples
+    all_labels = np.concatenate(all_labels)
+    all_preds = np.concatenate(all_preds)
+    avg_r2 = r2_score(all_labels, all_preds)
+    
+    return avg_loss, avg_r2
+
+def train(net, trainloader, epochs: int):
+    criterion = nn.MSELoss(reduction="mean")
+    optimizer = optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4)
+    net.train()
+    
+    for epoch in range(epochs):
+        total_loss = 0.0
+        all_labels = []
+        all_preds = []
+        total_samples = 0
+        
+        for inputs, labels in trainloader:
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            inputs = inputs.unsqueeze(2)
+
+            if torch.isnan(inputs).any():
+                print("Warning: NaN detected in input!")
+                continue
+
+            optimizer.zero_grad()
+            y_pred = net(inputs)
+            loss = criterion(y_pred, labels)
+            
+            total_loss += loss.item()
+            total_samples += inputs.size(0)
+
+            loss.backward()
+            optimizer.step()
+
+            all_labels.append(labels.cpu().numpy())
+            all_preds.append(y_pred.detach().cpu().numpy())
+
+        avg_loss = total_loss / total_samples
+        all_labels = np.concatenate(all_labels)
+        all_preds = np.concatenate(all_preds)
+        avg_r2 = r2_score(all_labels, all_preds)
+
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
+
 
 DEVICE = torch.device('cpu')
 
@@ -59,7 +128,7 @@ df = pd.read_csv("full_dataset_sintetico.csv")
 df_test = pd.read_csv("original_dataset.csv")
 
 test_dataset_custom = CustomDataset(df_test)
-testloader_global = DataLoader(test_dataset_custom, shuffle=False)
+testloader_global = DataLoader(test_dataset_custom, batch_size=len(test_dataset_custom),shuffle=False)
 
 dataset = CustomDataset(df)
 
