@@ -1,46 +1,17 @@
-import pandas as pd
-import os
-from sdv.sequential import PARSynthesizer
+from sdv.single_table import TVAESynthesizer
 from sdv.metadata import Metadata
-from sdmetrics.column_pairs import InterRowMSAS
+import pandas as pd
+import numpy as np
 
-# Caricamento dei dati
-data = pd.read_csv('feature_selection_dataset.csv')
+df = pd.read_csv("original_dataset.csv")
 
-# Standardizzazione dei dati (escludendo la colonna "Cell" che è un ID)
-#numeric_cols = data.select_dtypes(include=['number']).columns.difference(['Cell', "SOH"])
-#scaler = StandardScaler()
-#data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
-
-# Creazione della metadata
-metadata = Metadata.detect_from_dataframe(data=data)
-metadata.update_column(column_name="Cell", sdtype="id")
-metadata.set_sequence_key(column_name='Cell')
-metadata.validate()
-
-# Creazione e addestramento del sintetizzatore
-synthesizer = PARSynthesizer(metadata=metadata, verbose=True, epochs=500)
-synthesizer.fit(data)
-
-synthesizer.save('my_synthesizer.pkl')
-
-#synthesizer = PARSynthesizer.load('my_synthesizer_gpu_7000.pkl')
+metadata = Metadata.detect_from_dataframe(df)
 
 
-while True:
-    # Generazione dei dati sintetici
-    generated_data = synthesizer.sample(num_sequences=8, sequence_length=1250)
+synthesizer = TVAESynthesizer(metadata, verbose=True, epochs=5000)
 
-    # Applicazione della trasformazione inversa
-    #generated_data[numeric_cols] = scaler.inverse_transform(generated_data[numeric_cols])
+synthesizer.fit(df)
 
-    result = InterRowMSAS.compute(
-        real_data=(data["Cell"], data["SOH"]),
-        synthetic_data=(generated_data["Cell"], generated_data["SOH"]),
-    )
+synthetic_data = synthesizer.sample(num_rows=10000)
 
-    print(result)
-    if result >= 0.6:
-        # Salvataggio dei dati sintetici
-        generated_data.to_csv('synthetic_data_gpu.csv', index=False)
-        break
+synthetic_data.to_csv("synthetic_data.csv", index=False)
