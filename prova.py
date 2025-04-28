@@ -12,7 +12,6 @@ from sklearn.metrics import r2_score
 import torch.nn as nn
 import torch.optim as optim
 
-from FlowerClient import test, train
 
 import torch
 
@@ -91,7 +90,8 @@ def train(net, trainloader, epochs: int):
         print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Average R2: {avg_r2:.4f}")
 
 
-DEVICE = torch.device('cpu')
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 
 NUM_PARTITIONS = 2
@@ -102,6 +102,10 @@ class CustomDataset(data.Dataset):
         Class to transform the Pandas dataframe to Pytorch dataset. Also standardizes the data.
         """
         self.dataframe = dataframe
+        if "Battery" in self.dataframe.columns:
+            self.dataframe = self.dataframe.drop(labels=["Battery"], axis=1)
+        if "Cell" in self.dataframe.columns:
+            self.dataframe = self.dataframe.drop(labels=[ "Cell"], axis=1)
         
         self.dataframe.iloc[:, :-1] = self.dataframe.iloc[:, :-1].apply(pd.to_numeric, errors='coerce').fillna(0)
 
@@ -146,7 +150,7 @@ num_layers = 5
 t = torch.empty(64, 179, 1)
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
 #network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
-
+network.to(DEVICE)
 for i in range(4):
     train(network, trainloader, epochs=15)
     print(test(network, testloader_global))
