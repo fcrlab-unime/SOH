@@ -12,6 +12,8 @@ synthesizer = TVAESynthesizer(metadata, verbose=True, epochs=5000)
 
 synthesizer.fit(df)
 
+synthesizer.save("tvae_model.pkl")
+
 synthetic_data = synthesizer.sample(num_rows=10000)
 
 synthetic_data.to_csv("synthetic_data.csv", index=False)
