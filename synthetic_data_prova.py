@@ -121,7 +121,7 @@ def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
             
             # Aggiungi un po' di rumore realistico
             real_final, imag_final = add_realistic_noise(real_interp, imag_interp, 
-                                                        noise_level=0.01 + 0.02 * np.random.random())
+                                                        noise_level=0.005 + 0.01 * np.random.random())
             
             # Assicurati che la curva abbia caratteristiche fisicamente valide
             # (Applica vincoli fisici se necessario)

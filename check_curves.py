@@ -3,8 +3,8 @@ import pandas as pd
 from scipy.interpolate import interp1d
 import numpy as np
 
-real_data = pd.read_csv('original_dataset.csv')
-synthetic_data = pd.read_csv('dataset_sintetico_eis_8celle_quality.csv')
+real_data = pd.read_csv('dataset_sintetico_5.csv')
+synthetic_data = pd.read_csv('synthetic_data.csv')
 
 row = synthetic_data.iloc[1]
 
