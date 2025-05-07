@@ -3,14 +3,14 @@ import pandas as pd
 from scipy.interpolate import interp1d
 import numpy as np
 
-real_data = pd.read_csv('dataset_sintetico_5.csv')
+real_data = pd.read_csv('original_dataset.csv')
 synthetic_data = pd.read_csv('synthetic_data.csv')
 
-row = synthetic_data.iloc[1]
+row = real_data.iloc[1]
 
 # Estrai le colonne con prefisso r_ (X) e i_ (Y)
-x_values = [row[col] for col in synthetic_data.columns if col.startswith('r_')]
-y_values = [row[col] for col in synthetic_data.columns if col.startswith('i_')]
+x_values = [row[col] for col in real_data.columns if col.startswith('r_')]
+y_values = [row[col] for col in real_data.columns if col.startswith('i_')]
 
 if len(x_values) > 1:  # Assicura di avere abbastanza punti
     interp_func = interp1d(x_values, y_values, kind='cubic', fill_value='extrapolate')

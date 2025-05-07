@@ -130,7 +130,7 @@ class CustomDataset(data.Dataset):
         return sample_tensor, label_tensor
 
 
-df = pd.read_csv("dataset_sintetico_5.csv")
+df = pd.read_csv("synthetic_data.csv")
 df_test = pd.read_csv("original_dataset.csv")
 
 test_dataset_custom = CustomDataset(df_test)
@@ -146,8 +146,8 @@ trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True, drop_last=T
 testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 input_channels = 178
-hidden_channels = 256
-num_layers = 5
+hidden_channels = 512
+num_layers = 6
 
 t = torch.empty(64, 178, 1)
 network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
