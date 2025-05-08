@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from sdv.single_table import CTGANSynthesizer
+from ctgan import CTGAN
 from sdv.metadata import Metadata
 from sdmetrics.column_pairs import InterRowMSAS
 
@@ -15,7 +16,7 @@ metadata.set_sequence_key(column_name='Cell')
 
 metadata.validate()
 
-synthetizer = CTGANSynthesizer(metadata=metadata, epochs=20000, verbose=True)
+synthetizer = CTGAN(epochs=20000, verbose=True)
 
 synthetizer.fit(data)
 
