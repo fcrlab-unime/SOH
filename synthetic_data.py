@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from sdv.sequential import PARSynthesizer
+from sdv.single_table import CTGANSynthesizer
 from sdv.metadata import Metadata
 from sdmetrics.column_pairs import InterRowMSAS
 
@@ -15,17 +15,17 @@ metadata.set_sequence_key(column_name='Cell')
 
 metadata.validate()
 
-synthetizer = PARSynthesizer(metadata=metadata, epochs=20000, verbose=True)
+synthetizer = CTGANSynthesizer(metadata=metadata, epochs=20000, verbose=True)
 
 synthetizer.fit(data)
 
-synthetizer.save('parsynthesizer_20000.pkl')
+synthetizer.save('ctgan_20000.pkl')
 
-synthetizer = PARSynthesizer.load('parsynthesizer_20000.pkl')
+#synthetizer = CTGANSynthesizer.load('parsynthesizer_20000.pkl')
 
 while True:
 
-    synthetic_data = synthetizer.sample(num_sequences=8)
+    synthetic_data = synthetizer.sample(num_rows=10000)
 
     result = InterRowMSAS.compute(
         real_data=(data["Cell"], data["178"]),
@@ -34,8 +34,8 @@ while True:
 
     print(result)
 
-    if result >= 0.7:
-        synthetic_data.to_csv('synthetic_data.csv', index=False)
+    if result >= 0.8:
+        synthetic_data.to_csv('ctgan.csv', index=False)
         break
 
 
