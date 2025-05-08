@@ -143,7 +143,10 @@ def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
     synthetic_df = pd.DataFrame(synthetic_data)
     
     # Riordina le colonne
-    columns = ['Cell'] + [f'f_{i+1}' for i in range(59)] + [f'r_{i+1}' for i in range(59)] + [f'i_{i+1}' for i in range(59)] + ['Temperature', 'SOH']
+    columns = ['Cell']
+    for i in range(59):
+        columns.extend([f'f_{i+1}', f'r_{i+1}', f'i_{i+1}'])
+    columns.extend(['Temperature', 'SOH'])
     synthetic_df = synthetic_df[columns]
     
     return synthetic_df
@@ -153,19 +156,4 @@ def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
 synthetic_df = generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1250)
 
     # Salva il dataset
-synthetic_df.to_csv(f"synthetic_data.csv", index=False)
-
-# Visualizza qualche dato di esempio per verificare la qualità
-# Plotta alcune curve di Nyquist per verifica
-plt.figure(figsize=(12, 8))
-for i in range(0, len(synthetic_df), len(synthetic_df)//16):
-    real = np.array([synthetic_df.iloc[i][f'r_{j+1}'] for j in range(59)])
-    imag = np.array([synthetic_df.iloc[i][f'i_{j+1}'] for j in range(59)])
-    plt.plot(real, -imag)
-    
-plt.xlabel('Re(Z) [Ohm]')
-plt.ylabel('-Im(Z) [Ohm]')
-plt.title('Curve di Nyquist dei dati sintetici generati')
-plt.grid(True)
-plt.savefig('verifica_curve_sintetiche.png')
-plt.close()
+synthetic_df.to_csv(f"rumore_0_5-1_5%%.csv", index=False)
