@@ -121,7 +121,7 @@ def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
             
             # Aggiungi un po' di rumore realistico
             real_final, imag_final = add_realistic_noise(real_interp, imag_interp, 
-                                                        noise_level=0.01 + 0.02 * np.random.random())
+                                                        noise_level=0.005 + 0.01 * np.random.random())
             
             # Assicurati che la curva abbia caratteristiche fisicamente valide
             # (Applica vincoli fisici se necessario)
@@ -153,7 +153,7 @@ def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
 synthetic_df = generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1250)
 
     # Salva il dataset
-synthetic_df.to_csv(f"dataset_sintetico_5.csv", index=False)
+synthetic_df.to_csv(f"synthetic_data.csv", index=False)
 
 # Visualizza qualche dato di esempio per verificare la qualità
 # Plotta alcune curve di Nyquist per verifica

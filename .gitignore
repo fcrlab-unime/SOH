@@ -1,8 +1,8 @@
-share
-lib
-include
+# Created by venv; see https://docs.python.org/3/library/venv.html
 bin
-lib64
+include
+lib
+share
 pyvenv.cfg
 full_dataset_sintetico.csv
 __pycache__

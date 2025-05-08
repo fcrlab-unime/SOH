@@ -28,7 +28,7 @@ def test(net, testloader):
         for inputs, labels in testloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             inputs = inputs.unsqueeze(2)
-            labels = labels.unsqueeze(1)
+            #labels = labels.unsqueeze(1)
 
             if torch.isnan(inputs).any():
                 print("Warning: NaN detected in input!")
@@ -53,7 +53,7 @@ def test(net, testloader):
 
 def train(net, trainloader, epochs: int):
     criterion = nn.MSELoss(reduction="mean")
-    optimizer = optim.Adam(net.parameters(), lr=0.0001, weight_decay=1e-4)
+    optimizer = optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4)
     net.train()
     
     for epoch in range(epochs):
@@ -65,7 +65,7 @@ def train(net, trainloader, epochs: int):
         for inputs, labels in trainloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             inputs = inputs.unsqueeze(2)
-            labels = labels.unsqueeze(1)
+            #labels = labels.unsqueeze(1)
 
             if torch.isnan(inputs).any():
                 print("Warning: NaN detected in input!")
@@ -130,7 +130,7 @@ class CustomDataset(data.Dataset):
         return sample_tensor, label_tensor
 
 
-df = pd.read_csv("full_dataset_sintetico.csv")
+df = pd.read_csv("synthetic_data.csv")
 df_test = pd.read_csv("original_dataset.csv")
 
 test_dataset_custom = CustomDataset(df_test)
@@ -146,12 +146,12 @@ trainloader = DataLoader(train_dataset, batch_size=64, shuffle=True, drop_last=T
 testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 input_channels = 178
-hidden_channels = 256
-num_layers = 5
+hidden_channels = 512
+num_layers = 6
 
 t = torch.empty(64, 178, 1)
-#network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
-network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
+network = CCN1D(input_channels=input_channels, hidden_channels=hidden_channels, num_layers=num_layers)
+#network = Transformer(t.shape, embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout = 0.1)
 network.to(DEVICE)
 for i in range(4):
     train(network, trainloader, epochs=15)

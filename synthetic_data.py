@@ -21,6 +21,8 @@ synthetizer.fit(data)
 
 synthetizer.save('parsynthesizer_20000.pkl')
 
+synthetizer = PARSynthesizer.load('parsynthesizer_20000.pkl')
+
 while True:
 
     synthetic_data = synthetizer.sample(num_sequences=8)
