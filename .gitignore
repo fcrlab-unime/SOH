@@ -5,3 +5,4 @@ bin
 lib64
 pyvenv.cfg
 full_dataset_sintetico.csv
+__pycache__
