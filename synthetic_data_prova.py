@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 from scipy import signal
+from sklearn.neighbors import NearestNeighbors
 
+# Carica dataset reale
 df = pd.read_csv("original_dataset.csv")
 
 def extract_raw_impedance_curves(df):
@@ -25,35 +26,24 @@ def extract_raw_impedance_curves(df):
     
     return curves, np.array(temps), np.array(sohs)
 
-def find_similar_curves(curves, temps, sohs, target_temp, target_soh, n=5):
-    """Trova le curve più simili a una data temperatura e SOH"""
-    distances = []
-    
-    for i, (_, temp, soh) in enumerate(zip(curves, temps, sohs)):
-        # Normalizza le distanze per temperatura e SOH
-        temp_dist = abs(temp - target_temp) / 30  # Assumendo un range di temperatura di circa 30°C
-        soh_dist = abs(soh - target_soh) / 40     # Assumendo un range di SOH di circa 40%
-        
-        # Distanza pesata combinata
-        dist = temp_dist * 0.3 + soh_dist * 0.7   # Diamo più peso al SOH
-        distances.append((i, dist))
-    
-    # Ordina per distanza e prendi i primi n
-    distances.sort(key=lambda x: x[1])
-    similar_indices = [idx for idx, _ in distances[:n]]
-    
-    return [curves[i] for i in similar_indices]
+def find_similar_curves_knn(curves, temps, sohs, target_temp, target_soh, n=5):
+    """Trova le curve più simili usando KNN basato su temperatura e SOH"""
+    features = np.column_stack((temps, sohs))  # shape: (N, 2)
+    target = np.array([[target_temp, target_soh]])
+
+    knn = NearestNeighbors(n_neighbors=n, metric='euclidean')
+    knn.fit(features)
+    distances, indices = knn.kneighbors(target)
+
+    similar_curves = [curves[i] for i in indices[0]]
+    return similar_curves
 
 def interpolate_curves(similar_curves, weights=None):
     """Interpola tra curve simili per generare una nuova curva"""
     if weights is None:
-        # Pesi uniformi
         weights = np.ones(len(similar_curves)) / len(similar_curves)
     
-    # Assumiamo che tutte le curve abbiano le stesse frequenze
     freqs = similar_curves[0][0]
-    
-    # Combina le parti reali e immaginarie con i pesi
     real_combined = np.zeros_like(similar_curves[0][1])
     imag_combined = np.zeros_like(similar_curves[0][2])
     
@@ -65,11 +55,9 @@ def interpolate_curves(similar_curves, weights=None):
 
 def add_realistic_noise(real, imag, noise_level=0.02):
     """Aggiunge rumore realistico alle parti reale e immaginaria"""
-    # Aggiungi rumore proporzionale all'ampiezza della curva
     real_noise = np.random.normal(0, noise_level * np.abs(real).mean(), size=real.shape)
     imag_noise = np.random.normal(0, noise_level * np.abs(imag).mean(), size=imag.shape)
     
-    # Applica un filtro per avere rumore correlato (più realistico)
     real_noise = signal.savgol_filter(real_noise, 5, 2)
     imag_noise = signal.savgol_filter(imag_noise, 5, 2)
     
@@ -77,83 +65,57 @@ def add_realistic_noise(real, imag, noise_level=0.02):
 
 def generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1200):
     """Genera un dataset sintetico di EIS basato su interpolazione di curve reali"""
-    # Estrai le curve reali
     real_curves, real_temps, real_sohs = extract_raw_impedance_curves(df)
-    
-    # Memorizza le frequenze (assumiamo che siano le stesse per tutte le curve)
     freqs = real_curves[0][0]
     
     synthetic_data = []
     
     for cell_id in range(n_cells):
-        # Determina range di SOH per questa cella (degradazione realistica)
-        max_soh = min(100, 95 - (cell_id * 5 % 20))  # Varia il SOH iniziale
-        min_soh = max(60, max_soh - 20 - cell_id % 10)  # Varia la velocità di degradazione
+        max_soh = min(100, 95 - (cell_id * 5 % 20))
+        min_soh = max(60, max_soh - 20 - cell_id % 10)
         
-        # Genera SOH con trend decrescente e piccole variazioni
         base_sohs = np.linspace(max_soh, min_soh, samples_per_cell)
-        # Aggiungi oscillazioni realistiche al SOH
         cycles = np.linspace(0, 8 * np.pi, samples_per_cell)
         small_oscillations = 1.5 * np.sin(cycles) + 0.8 * np.sin(2.5 * cycles)
         cell_sohs = base_sohs + small_oscillations
-        cell_sohs = np.clip(cell_sohs, min_soh-3, max_soh+3).round().astype(int)
+        cell_sohs = np.clip(cell_sohs, min_soh - 3, max_soh + 3).round().astype(int)
         
-        # Genera temperature con pattern stagionale e utilizzo realistico
-        base_temp = 22 + (cell_id % 4) * 3  # Temperature base diverse
-        seasonal = 10 * np.sin(np.linspace(0, 2*np.pi, samples_per_cell))
-        daily = 3 * np.sin(np.linspace(0, 40*np.pi, samples_per_cell))
+        base_temp = 22 + (cell_id % 4) * 3
+        seasonal = 10 * np.sin(np.linspace(0, 2 * np.pi, samples_per_cell))
+        daily = 3 * np.sin(np.linspace(0, 40 * np.pi, samples_per_cell))
         cell_temps = base_temp + seasonal + daily
         cell_temps = np.clip(cell_temps, 10, 42).round().astype(int)
         
         for i in range(samples_per_cell):
-            # Trova curve simili nel dataset reale
             target_temp = cell_temps[i]
             target_soh = cell_sohs[i]
-            similar_curves = find_similar_curves(real_curves, real_temps, real_sohs, 
-                                                target_temp, target_soh, n=5)
             
-            # Genera pesi per l'interpolazione (più peso alle curve più simili)
+            similar_curves = find_similar_curves_knn(real_curves, real_temps, real_sohs, 
+                                                     target_temp, target_soh, n=5)
+            
             weights = np.linspace(0.5, 0.1, len(similar_curves))
             weights = weights / weights.sum()
             
-            # Interpola per creare una nuova curva
             _, real_interp, imag_interp = interpolate_curves(similar_curves, weights)
-            
-            # Aggiungi un po' di rumore realistico
             real_final, imag_final = add_realistic_noise(real_interp, imag_interp, 
-                                                        noise_level=0.005 + 0.01 * np.random.random())
+                                                         noise_level=0.005 + 0.01 * np.random.random())
             
-            # Assicurati che la curva abbia caratteristiche fisicamente valide
-            # (Applica vincoli fisici se necessario)
-            
-            # Aggiungi alla lista dei dati sintetici
             row = {'Cell': f'{cell_id+1}'}
-            
             for j in range(len(freqs)):
                 row[f'f_{j+1}'] = freqs[j]
                 row[f'r_{j+1}'] = real_final[j]
                 row[f'i_{j+1}'] = imag_final[j]
-                
             row['Temperature'] = target_temp
             row['SOH'] = target_soh
             
             synthetic_data.append(row)
     
-    # Crea il dataframe
     synthetic_df = pd.DataFrame(synthetic_data)
-    
-    # Riordina le colonne
-    columns = ['Cell']
-    for i in range(59):
-        columns.extend([f'f_{i+1}', f'r_{i+1}', f'i_{i+1}'])
-    columns.extend(['Temperature', 'SOH'])
+    columns = ['Cell'] + [f for j in range(59) for f in (f'f_{j+1}', f'r_{j+1}', f'i_{j+1}')] + ['Temperature', 'SOH']
     synthetic_df = synthetic_df[columns]
     
     return synthetic_df
 
-# Genera il nuovo dataset sintetico
-
+# Generazione ed esportazione
 synthetic_df = generate_synthetic_eis_dataset(df, n_cells=8, samples_per_cell=1250)
-
-    # Salva il dataset
-synthetic_df.to_csv(f"rumore_0_5-1_5%%.csv", index=False)
+synthetic_df.to_csv("synthetic_dataset_knn.csv", index=False)
