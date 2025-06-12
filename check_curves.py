@@ -4,9 +4,9 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 real_data = pd.read_csv('original_dataset.csv')
-synthetic_data = pd.read_csv('ctgan.csv')
+synthetic_data = pd.read_csv('parsynthesizer_20000.csv')
 
-row = synthetic_data.iloc[1]
+row = synthetic_data.iloc[6]
 
 # Estrai le colonne con prefisso r_ (X) e i_ (Y)
 x_values = [row[col] for col in synthetic_data.columns if col.startswith('r_')]

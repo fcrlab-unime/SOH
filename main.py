@@ -13,7 +13,7 @@ import flwr
 from flwr.client import Client, ClientApp, NumPyClient
 from flwr.common import Context, NDArrays, Scalar
 from flwr.server import ServerApp, ServerConfig, ServerAppComponents
-from flwr.server.strategy import Strategy, FedAvg
+from flwr.server.strategy import Strategy, FedAvg, FedMedian, FedAdam
 from flwr.simulation import run_simulation
 from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import PathologicalPartitioner
@@ -122,7 +122,7 @@ def aggregate_metrics(results: List[Tuple[int, Dict[str, float]]]) -> Dict[str, 
 def server_fn(context: Context) -> ServerAppComponents:
     config = ServerConfig(num_rounds=15)
 
-    strategy = FedAvg(
+    strategy = FedAdam(
         evaluate_metrics_aggregation_fn=aggregate_metrics,
         on_fit_config_fn=get_on_fit_config_fn(),
     )

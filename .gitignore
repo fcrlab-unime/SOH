@@ -6,3 +6,4 @@ share
 pyvenv.cfg
 full_dataset_sintetico.csv
 __pycache__
+*.png

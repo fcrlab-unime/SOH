@@ -1,65 +1,48 @@
-import numpy as np
 import pandas as pd
-from impedance.models.circuits import CustomCircuit
-import matplotlib.pyplot as plt
-from tqdm import tqdm
+import numpy as np
+import torch
+from sklearn.preprocessing import StandardScaler
+from sdv.metadata import Metadata
+from sdv.single_table import CTGANSynthesizer
+import joblib  # per salvare lo scaler
 
-# Carica il dataset
-df = pd.read_csv("original_dataset.csv")
+# Caricamento dati reali
+real_data = pd.read_csv("Battery_RUL.csv")
 
-# Candidati di circuiti e guess iniziali
-circuit_candidates = [
-    ('R0-p(R1,C1)', [0.01, 0.1, 1e-4]),
-    ('R0-p(R1,CPE1)', [0.01, 0.1, 1e-5, 0.9]),
-    ('R0-p(R1,CPE1)-W1', [0.01, 0.1, 1e-5, 0.9, 0.01]),
-    ('R0-p(R1,C1)-p(R2,C2)', [0.01, 0.1, 1e-4, 0.05, 1e-5]),
-    ('R0-p(R1,CPE1)-p(R2,CPE2)', [0.01, 0.1, 1e-5, 0.9, 0.05, 5e-6, 0.8]),
-]
+# Separazione feature e target
+target_column = "RUL"
+feature_columns = [col for col in real_data.columns if col != target_column]
 
-results = []
+# Normalizzazione delle sole feature
+scaler = StandardScaler()
+normalized_features = scaler.fit_transform(real_data[feature_columns])
 
-for idx, row in tqdm(df.iterrows(), total=len(df)):
-    # Estrai frequenze e impedenze
-    frequencies = np.array([row[col] for col in df.columns if col.startswith('f_')])
-    Z_real = np.array([row[col] for col in df.columns if col.startswith('r_')])
-    Z_imag = np.array([row[col] for col in df.columns if col.startswith('i_')])
-    Z = Z_real + 1j * Z_imag
+# Salvataggio dello scaler
+joblib.dump(scaler, "scaler_rul.pkl")
 
-    # Filtra NaN e zero
-    mask = (~np.isnan(frequencies)) & (~np.isnan(Z.real)) & (~np.isnan(Z.imag)) & (frequencies > 0)
-    frequencies_clean = frequencies[mask]
-    Z_clean = Z[mask]
+# Creazione DataFrame normalizzato
+normalized_data = pd.DataFrame(normalized_features, columns=feature_columns)
+normalized_data[target_column] = real_data[target_column].values
 
-    best_mse = np.inf
-    best_fit = None
+# Metadata per SDV
+metadata = Metadata.detect_from_dataframe(normalized_data)
 
-    for circuit_string, guess in circuit_candidates:
-        try:
-            circuit = CustomCircuit(initial_guess=guess, circuit=circuit_string)
-            circuit.fit(frequencies_clean, Z_clean)
-            Z_fit = circuit.predict(frequencies_clean)
-            mse = np.mean(np.abs(Z_clean - Z_fit)**2)
+# Addestramento CTGAN
+synthesizer = CTGANSynthesizer(metadata, epochs=20000, verbose=True)
+synthesizer.fit(normalized_data)
 
-            if mse < best_mse:
-                best_mse = mse
-                best_fit = {
-                    "index": idx,
-                    "circuit": circuit_string,
-                    "mse": mse,
-                    "parameters": circuit.parameters_,
-                }
-        except:
-            continue
+# Salvataggio sintetizzatore
+synthesizer.save("ctgan_rul.pkl")
 
-    if best_fit:
-        results.append(best_fit)
+# Generazione dati sintetici
+synthetic_data = synthesizer.sample(num_rows=len(real_data))
 
-# Converte i risultati in DataFrame
-output_df = pd.DataFrame(results)
-output_df[['param_' + str(i) for i in range(output_df['parameters'].str.len().max())]] = pd.DataFrame(output_df['parameters'].tolist(), index=output_df.index)
-output_df.drop(columns='parameters', inplace=True)
+# Denormalizzazione delle feature sintetiche
+synthetic_features = synthetic_data[feature_columns]
+synthetic_features_denorm = scaler.inverse_transform(synthetic_features)
 
-# Salva su CSV
-output_df.to_csv("fitted_parameters_all_curves.csv", index=False)
+# Sostituzione delle feature con la versione denormalizzata
+synthetic_data[feature_columns] = synthetic_features_denorm
 
-print("✅ Stima completata per tutte le curve. Risultati salvati in 'fitted_parameters_all_curves.csv'")
+# Salvataggio su CSV
+synthetic_data.to_csv("synthetic_battery_rul.csv", index=False)
