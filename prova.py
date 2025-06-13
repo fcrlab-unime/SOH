@@ -105,27 +105,27 @@ def test(model, dataloader):
 
 # Main
 if __name__ == "__main__":
-    df_train = pd.read_csv("Battery_RUL.csv")
-    df_test = pd.read_csv("original_dataset.csv")
+    df_train = pd.read_csv("synthetic_battery_rul.csv")
+    df_test = pd.read_csv("Battery_RUL.csv")
 
     columns_to_drop = [col for col in ["Battery", "Cell"] if col in df_train.columns]
     X_train = df_train.drop(columns=columns_to_drop + ["RUL"], axis=1)
-    #X_test = df_test.drop(columns=columns_to_drop + ["RUL"], axis=1)
+    X_test = df_test.drop(columns=columns_to_drop + ["RUL"], axis=1)
     y_train = df_train["RUL"]
-    #y_test = df_test["RUL"]
+    y_test = df_test["RUL"]
 
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
-    #X_test_scaled = scaler.transform(X_test)
+    X_test_scaled = scaler.transform(X_test)
 
     df_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns)
     df_train_scaled["RUL"] = y_train.values
 
-    #df_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns)
-    #df_test_scaled["RUL"] = y_test.values
+    df_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns)
+    df_test_scaled["RUL"] = y_test.values
 
     full_dataset = CustomDataset(df_train_scaled)
-    #test_dataset = CustomDataset(df_test_scaled)
+    test_dataset = CustomDataset(df_test_scaled)
 
     train_size = int(TRAIN_RATIO * len(full_dataset))
     val_size = len(full_dataset) - train_size
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     trainloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
     valloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    #testloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    testloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     model = CCN1D(input_channels=8, hidden_channels=512, num_layers=4, dropout=0.3)
     #model = Transformer((BATCH_SIZE, 178, 1), embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout=0.1)
@@ -142,5 +142,5 @@ if __name__ == "__main__":
     for i in range(4):
         print(f"\n--- Training Round {i+1} ---")
         train(model, trainloader, EPOCHS)
-        loss, r2 = test(model, valloader)
+        loss, r2 = test(model, testloader)
         print(f"Test Loss: {loss:.4f} | Test R2: {r2:.4f}")
