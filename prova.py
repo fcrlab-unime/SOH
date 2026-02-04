@@ -2,96 +2,92 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
-from torch.utils.data import DataLoader, random_split
-
+from torch.utils.data import DataLoader, Subset
 import pandas as pd
 import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+import os
 
-from DatasetLoader import DatasetLoader
-from CCN1D import CCN1D
-from Transformer import Transformer
+# --- Classi Modello ---
+from CCN1D import CCN1D 
 
-# Config
+# --- Configurazione ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 64
-EPOCHS = 15
-TRAIN_RATIO = 0.8
+EPOCHS = 100
+PATIENCE = 10
+CSV_PATH = "dataset_sorted.csv"
+TARGET_COL = "soh"
 
+# --- Early Stopping ---
+class EarlyStopping:
+    def __init__(self, patience=7, min_delta=0, path='best_model.pth'):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.path = path
+        self.counter = 0
+        self.best_loss = None
+        self.early_stop = False
 
-# Dataset
+    def __call__(self, val_loss, model):
+        if self.best_loss is None:
+            self.best_loss = val_loss
+            self.save_checkpoint(model)
+        elif val_loss > self.best_loss - self.min_delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_loss = val_loss
+            self.save_checkpoint(model)
+            self.counter = 0
+
+    def save_checkpoint(self, model):
+        torch.save(model.state_dict(), self.path)
+
+# --- Dataset ---
 class CustomDataset(data.Dataset):
-    def __init__(self, dataframe):
-        self.dataframe = dataframe.drop(columns=[col for col in ["Battery", "Cell"] if col in dataframe.columns])
+    def __init__(self, features, labels):
+        self.features = torch.tensor(features, dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.float32)
 
     def __len__(self):
-        return len(self.dataframe)
+        return len(self.features)
 
     def __getitem__(self, idx):
-        features = self.dataframe.iloc[idx, :-1].values.astype(np.float32)
-        label = float(self.dataframe.iloc[idx, -1])
-        return torch.tensor(features), torch.tensor(label, dtype=torch.float32)
+        return self.features[idx], self.labels[idx]
 
-
-# Train
-def train(model, dataloader, epochs):
+# --- Funzioni di Training & Test ---
+def train_one_epoch(model, dataloader, criterion, optimizer):
     model.train()
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    total_loss = 0
+    for inputs, targets in dataloader:
+        inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
+        inputs = inputs.unsqueeze(2) 
 
-    for epoch in range(epochs):
-        total_loss = 0
-        preds, labels = [], []
+        optimizer.zero_grad()
+        outputs = model(inputs).squeeze()
+        loss = criterion(outputs, targets)
+        loss.backward()
+        
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+        total_loss += loss.item() * inputs.size(0)
+    return total_loss / len(dataloader.dataset)
 
-        for inputs, targets in dataloader:
-            inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
-            inputs = inputs.unsqueeze(2)
-            #targets = targets.unsqueeze(1)
-
-            if torch.isnan(inputs).any():
-                print("NaN in input, skipping batch.")
-                continue
-
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item() * inputs.size(0)
-            preds.append(outputs.detach().cpu().numpy())
-            labels.append(targets.cpu().numpy())
-
-        preds = np.concatenate(preds)
-        labels = np.concatenate(labels)
-        avg_loss = total_loss / len(dataloader.dataset)
-        avg_r2 = r2_score(labels, preds)
-
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | R2: {avg_r2:.4f}")
-
-
-# Test
-def test(model, dataloader):
+def validate(model, dataloader, criterion):
     model.eval()
-    criterion = nn.MSELoss()
     total_loss = 0
     preds, labels = [], []
-
     with torch.no_grad():
         for inputs, targets in dataloader:
             inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
             inputs = inputs.unsqueeze(2)
-            #targets = targets.unsqueeze(1)
-
-            if torch.isnan(inputs).any():
-                print("NaN in input, skipping batch.")
-                continue
-
-            outputs = model(inputs)
+            outputs = model(inputs).squeeze()
             loss = criterion(outputs, targets)
             total_loss += loss.item() * inputs.size(0)
-
             preds.append(outputs.cpu().numpy())
             labels.append(targets.cpu().numpy())
 
@@ -99,48 +95,81 @@ def test(model, dataloader):
     labels = np.concatenate(labels)
     avg_loss = total_loss / len(dataloader.dataset)
     avg_r2 = r2_score(labels, preds)
-
     return avg_loss, avg_r2
 
-
-# Main
+# --- Main ---
 if __name__ == "__main__":
-    df_train = pd.read_csv("Battery_dataset.csv")
-    #df_test = pd.read_csv("Battery_RUL.csv")
+    df = pd.read_csv(CSV_PATH)
 
-    #columns_to_drop = [col for col in ["battery_id", "Cell"] if col in df_train.columns]
-    X_train = df_train.drop(columns=["RUL", "battery_id"], axis=1)
-    #X_test = df_test.drop(columns=columns_to_drop + ["RUL"], axis=1)
-    y_train = df_train["SOH"]
-    #y_test = df_test["RUL"]
+    # 1. Pulizia Colonne e NaN
+    cols_to_remove = [c for c in df.columns if c.lower().startswith(('f_', 'soc', 'id'))]
+    df = df.drop(columns=cols_to_remove)
+    df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    #X_test_scaled = scaler.transform(X_test)
+    # 2. Stratificazione per Regressione
+    # Creiamo dei bins basati sui decili del target per lo split stratificato
+    y_binned = pd.qcut(df[TARGET_COL], q=10, labels=False, duplicates='drop')
 
-    df_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns)
-    df_train_scaled["SOH"] = y_train.values
+    # 3. Preprocessing
+    X = df.drop(columns=[TARGET_COL])
+    y = df[TARGET_COL].values
+    
+    scaler_x = StandardScaler()
+    X_scaled = scaler_x.fit_transform(X)
+    
+    scaler_y = StandardScaler()
+    y_scaled = scaler_y.fit_transform(y.reshape(-1, 1)).flatten()
+    
+    # 4. Stratified Split (80% train, 10% val, 10% test)
+    # Primo split: Train vs (Val + Test)
+    idx_train, idx_temp = train_test_split(
+        np.arange(len(df)), 
+        test_size=0.2, 
+        random_state=42, 
+        stratify=y_binned
+    )
+    
+    # Secondo split: Val vs Test
+    y_binned_temp = y_binned.iloc[idx_temp]
+    idx_val, idx_test = train_test_split(
+        idx_temp, 
+        test_size=0.5, 
+        random_state=42, 
+        stratify=y_binned_temp
+    )
 
-    #df_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns)
-    #df_test_scaled["RUL"] = y_test.values
+    full_dataset = CustomDataset(X_scaled, y_scaled)
+    train_ds = Subset(full_dataset, idx_train)
+    val_ds = Subset(full_dataset, idx_val)
+    test_ds = Subset(full_dataset, idx_test)
 
-    full_dataset = CustomDataset(df_train_scaled)
-    #test_dataset = CustomDataset(df_test_scaled)
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
+    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
 
-    train_size = int(TRAIN_RATIO * len(full_dataset))
-    val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    # 5. Training
+    num_features = X.shape[1]
+    model = CCN1D(input_channels=num_features, hidden_channels=1024, num_layers=6, dropout=0.2).to(DEVICE)
+    
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    early_stopping = EarlyStopping(patience=PATIENCE, path='best_model.pth')
 
-    trainloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
-    valloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    #testloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    for epoch in range(EPOCHS):
+        train_loss = train_one_epoch(model, train_loader, criterion, optimizer)
+        val_loss, val_r2 = validate(model, val_loader, criterion)
+        print(f"Epoch {epoch+1:03d} | Train Loss: {train_loss:.6f} | Val Loss: {val_loss:.6f} | Val R2: {val_r2:.4f}")
+        
+        early_stopping(val_loss, model)
+        if early_stopping.early_stop:
+            print("Early stopping triggerato.")
+            break
 
-    model = CCN1D(input_channels=8, hidden_channels=1024, num_layers=4, dropout=0.3)
-    #model = Transformer((BATCH_SIZE, 178, 1), embed_size=8, output_size=1, num_layers=8, forward_expansion=1, heads=2, dropout=0.1)
-    model.to(DEVICE)
-
-    for i in range(10):
-        print(f"\n--- Training Round {i+1} ---")
-        train(model, trainloader, EPOCHS)
-        loss, r2 = test(model, valloader)
-        print(f"Test Loss: {loss:.4f} | Test R2: {r2:.4f}")
+    # 6. Export ONNX
+    model.load_state_dict(torch.load('best_model.pth'))
+    model.eval()
+    dummy_input = torch.randn(1, num_features, 1).to(DEVICE)
+    torch.onnx.export(model, dummy_input, "model_output.onnx", 
+                      input_names=['input'], output_names=['output'],
+                      dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}})
+    print("Modello esportato in ONNX.")

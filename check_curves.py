@@ -4,13 +4,13 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 real_data = pd.read_csv('original_dataset.csv')
-synthetic_data = pd.read_csv('parsynthesizer_20000.csv')
+synthetic_data = pd.read_csv('cell_1_synth.csv')
 
-row = synthetic_data.iloc[6]
+row = synthetic_data.iloc[1]
 
 # Estrai le colonne con prefisso r_ (X) e i_ (Y)
 x_values = [row[col] for col in synthetic_data.columns if col.startswith('r_')]
-y_values = [row[col] for col in synthetic_data.columns if col.startswith('i_')]
+y_values = [-row[col] for col in synthetic_data.columns if col.startswith('i_')]
 
 if len(x_values) > 1:  # Assicura di avere abbastanza punti
     interp_func = interp1d(x_values, y_values, kind='cubic', fill_value='extrapolate')
@@ -24,10 +24,9 @@ else:
 # Plot
 plt.figure(figsize=(8, 6))
 plt.scatter(x_values, y_values, color='b', label='r vs i')
-plt.xlabel('Valori r_')
-plt.ylabel('Valori i_')
-plt.title('Grafico r_ vs i_')
-plt.legend()
+plt.xlabel('Re(Z) [Ω]')
+plt.ylabel('−Im(Z) [Ω]')
+plt.title('Nyquist Plot')
 plt.grid()
 plt.show()
 

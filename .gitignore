@@ -1,9 +1,2 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
-bin
-include
-lib
-share
-pyvenv.cfg
-full_dataset_sintetico.csv
+.venv
 __pycache__
-*.png
